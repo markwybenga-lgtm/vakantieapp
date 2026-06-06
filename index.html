@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Reisgids Italië 2026</title>
+  <meta name="theme-color" content="#C45A38" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Reisgids" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,500&family=Spline+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --paper: #F4EBDD;
+      --paper-2: #EADFCB;
+      --ink: #2A2018;
+      --ink-soft: #6B5D4E;
+      --terra: #C45A38;
+      --terra-deep: #A8421F;
+      --olive: #6E7740;
+      --sea: #2E6E7E;
+      --gold: #E0A02E;
+      --line: rgba(42, 32, 24, 0.14);
+      --shadow: 0 18px 40px -22px rgba(42, 32, 24, 0.55);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Spline Sans', system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(120% 60% at 50% -10%, #F8F1E5 0%, var(--paper) 55%),
+        var(--paper);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 40px);
+    }
+
+    /* subtle paper grain */
+    body::before {
+      content: "";
+      position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.4;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+
+    .wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 0 20px; }
+
+    /* ---------- Masthead ---------- */
+    header { padding: 34px 0 18px; }
+    .kicker {
+      font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase;
+      color: var(--terra-deep); font-weight: 600;
+    }
+    .title {
+      font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(54px, 18vw, 88px);
+      line-height: 0.92; letter-spacing: -0.02em; margin: 6px 0 4px;
+    }
+    .title em { font-style: italic; font-weight: 500; color: var(--terra); }
+    .route {
+      font-size: 14px; color: var(--ink-soft);
+      border-top: 1.5px solid var(--line); padding-top: 12px; margin-top: 10px;
+    }
+
+    /* ---------- Today hero ---------- */
+    .hero {
+      position: relative; overflow: hidden;
+      background: linear-gradient(150deg, var(--terra) 0%, var(--terra-deep) 100%);
+      color: #FBF3E7; border-radius: 22px; padding: 24px 22px 22px;
+      box-shadow: var(--shadow); margin-top: 8px;
+    }
+    .hero::after {
+      content: ""; position: absolute; right: -40px; top: -40px; width: 150px; height: 150px;
+      background: radial-gradient(circle, var(--gold) 0%, rgba(224,160,46,0) 70%); opacity: 0.55;
+    }
+    .hero .label { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; opacity: 0.8; }
+    .hero .big {
+      font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; line-height: 1.05;
+      margin: 8px 0 4px;
+    }
+    .hero .sub { font-size: 14px; opacity: 0.92; }
+    .hero .countbar {
+      display: flex; gap: 18px; margin-top: 18px; padding-top: 16px;
+      border-top: 1px solid rgba(255,255,255,0.22);
+    }
+    .stat .num { font-family: 'Fraunces', serif; font-weight: 700; font-size: 30px; line-height: 1; }
+    .stat .cap { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.78; margin-top: 4px; }
+    .hero .nextline { margin-top: 16px; font-size: 13.5px; opacity: 0.95; display: flex; align-items: center; gap: 8px; }
+    .hero .nextline b { font-weight: 600; }
+    .hero .wx { margin-top: 14px; display: inline-flex; align-items: center; gap: 9px;
+      background: rgba(0,0,0,0.16); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; }
+    .hero .wx .em { font-size: 17px; }
+
+    /* ---------- Section heading ---------- */
+    .section-h {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin: 34px 4px 14px;
+    }
+    .section-h h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; }
+    .section-h span { font-size: 12px; color: var(--ink-soft); letter-spacing: 0.04em; }
+
+    /* ---------- Stop cards ---------- */
+    .stop {
+      position: relative; display: grid; grid-template-columns: 56px 1fr; gap: 14px;
+      background: #FCF7EE; border: 1px solid var(--line); border-radius: 16px;
+      padding: 16px 16px 16px 14px; margin-bottom: 12px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      opacity: 0; transform: translateY(10px);
+      animation: rise 0.5s cubic-bezier(.2,.7,.2,1) forwards;
+    }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    .stop.now { border-color: var(--terra); box-shadow: 0 0 0 2px rgba(196,90,56,0.18); background: #FFF9F0; }
+    .stop.past { opacity: 0.55; }
+
+    .daycol { text-align: center; padding-top: 2px; }
+    .daycol .dnum { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; line-height: 0.9; color: var(--terra-deep); }
+    .daycol .dmon { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-top: 3px; }
+    .daycol .arrow { color: var(--line); font-size: 14px; margin-top: 8px; }
+
+    .info .nm { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; line-height: 1.15; }
+    .info .ac { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+    .info .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+    .chip {
+      font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line);
+      color: var(--ink-soft); white-space: nowrap;
+    }
+    .chip.nights { background: var(--paper-2); border-color: transparent; color: var(--ink); }
+    .chip.wx { display: inline-flex; align-items: center; gap: 6px; }
+    .chip.wx .em { font-size: 14px; }
+    .chip.wx.warm { border-color: rgba(196,90,56,0.4); color: var(--terra-deep); }
+    .chip.now-tag { background: var(--terra); color: #fff; border-color: transparent; font-weight: 600; }
+    .chip.loading { color: #b3a796; }
+
+    footer { margin-top: 30px; text-align: center; font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+    footer .install { margin-top: 8px; }
+    .pill-note { display:inline-block; background: var(--paper-2); padding: 8px 14px; border-radius: 999px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">Zomer 2026 · Familiereis</div>
+      <h1 class="title">Bella <em>Italia</em></h1>
+      <div class="route">Rome → Gargano → Matera → Salento → Monopoli → Napels → terug</div>
+    </header>
+
+    <section class="hero" id="hero">
+      <div class="label">Vandaag</div>
+      <div class="big" id="hero-big">Laden…</div>
+      <div class="sub" id="hero-sub"></div>
+      <div class="countbar" id="hero-countbar"></div>
+      <div class="nextline" id="hero-next"></div>
+      <div class="wx" id="hero-wx" style="display:none"></div>
+    </section>
+
+    <div class="section-h">
+      <h2>De route</h2>
+      <span id="trip-range"></span>
+    </div>
+    <div id="stops"></div>
+
+    <footer>
+      <div class="pill-note" id="wx-note">Het weer verschijnt vanzelf zodra een datum binnen ±16 dagen ligt.</div>
+      <div class="install">Tip: open het menu van je browser en kies “Toevoegen aan startscherm” om er een echte app van te maken.</div>
+    </footer>
+  </div>
+
+  <script>
+  // ----------------------------------------------------------------------
+  //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
+  //  Datums: 'JJJJ-MM-DD'. end = de dag dat je weer vertrekt.
+  // ----------------------------------------------------------------------
+  const TRIP = [
+    { name: 'Rome',                 accom: 'Aankomst & stad',            start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
+    { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',        start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
+    { name: 'Matera',               accom: '5 Elementi Sassi',           start: '2026-07-30', end: '2026-07-31', lat: 40.6664, lng: 16.6043 },
+    { name: 'Giurdignano',          accom: 'Agriturismo Il Megalite',    start: '2026-07-31', end: '2026-08-03', lat: 40.1486, lng: 18.3486 },
+    { name: 'Alliste (Salento)',    accom: 'Masseria Cisternella',       start: '2026-08-03', end: '2026-08-07', lat: 39.9447, lng: 18.0847 },
+    { name: 'Monopoli',             accom: 'Masseria Santa Teresa',      start: '2026-08-07', end: '2026-08-11', lat: 40.9543, lng: 17.2967 },
+    { name: 'Napels (omgeving)',    accom: 'Twee dagen in de buurt',     start: '2026-08-11', end: '2026-08-13', lat: 40.8518, lng: 14.2681 },
+    { name: 'Rome → Amsterdam',     accom: 'Terugreis & vlucht',         start: '2026-08-13', end: '2026-08-13', lat: 41.9028, lng: 12.4964 }
+  ];
+
+  // ---------- Datum-helpers (Nederlands) ----------
+  const DAYS = ['zo','ma','di','wo','do','vr','za'];
+  const MONTHS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  const d = (s) => { const [y,m,dd] = s.split('-').map(Number); return new Date(y, m-1, dd); };
+  const today = () => { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); };
+  const dayDiff = (a,b) => Math.round((a - b) / 86400000);
+  const fmtShort = (dt) => `${DAYS[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}`;
+
+  // ---------- WMO weercode → emoji + tekst ----------
+  function wxInfo(code) {
+    const m = {
+      0:['☀️','helder'], 1:['🌤️','vrij zonnig'], 2:['⛅','half bewolkt'], 3:['☁️','bewolkt'],
+      45:['🌫️','mist'], 48:['🌫️','mist'],
+      51:['🌦️','motregen'], 53:['🌦️','motregen'], 55:['🌦️','motregen'],
+      61:['🌧️','regen'], 63:['🌧️','regen'], 65:['🌧️','zware regen'],
+      71:['🌨️','sneeuw'], 73:['🌨️','sneeuw'], 75:['🌨️','sneeuw'],
+      80:['🌦️','buien'], 81:['🌦️','buien'], 82:['⛈️','hevige buien'],
+      95:['⛈️','onweer'], 96:['⛈️','onweer'], 99:['⛈️','zwaar onweer']
+    };
+    return m[code] || ['🌡️','—'];
+  }
+
+  // ---------- Bepaal status van vandaag ----------
+  function computeState() {
+    const t = today();
+    const first = d(TRIP[0].start);
+    const last = d(TRIP[TRIP.length-1].end);
+    let current = -1;
+    for (let i = 0; i < TRIP.length; i++) {
+      const s = d(TRIP[i].start), e = d(TRIP[i].end);
+      if (t >= s && (t < e || (i === TRIP.length-1 && t <= e))) { current = i; break; }
+    }
+    if (t < first) return { phase: 'before', daysToStart: dayDiff(first, t) };
+    if (t > last)  return { phase: 'after' };
+    return { phase: 'during', current };
+  }
+
+  // ---------- Render de "Vandaag"-kaart ----------
+  function renderHero(state) {
+    const big = document.getElementById('hero-big');
+    const sub = document.getElementById('hero-sub');
+    const bar = document.getElementById('hero-countbar');
+    const next = document.getElementById('hero-next');
+
+    if (state.phase === 'before') {
+      const s = TRIP[0];
+      big.textContent = `Nog ${state.daysToStart} ${state.daysToStart === 1 ? 'dag' : 'dagen'}`;
+      sub.textContent = `tot het vertrek naar ${s.name}`;
+      bar.innerHTML = `
+        <div class="stat"><div class="num">${TRIP.length}</div><div class="cap">stops</div></div>
+        <div class="stat"><div class="num">${dayDiff(d(TRIP[TRIP.length-1].end), d(TRIP[0].start))}</div><div class="cap">dagen reis</div></div>`;
+      next.innerHTML = `🛫 <span>Eerste bestemming: <b>${s.name}</b> op ${fmtShort(d(s.start))}</span>`;
+      return { lat: s.lat, lng: s.lng, date: s.start, place: s.name };
+    }
+
+    if (state.phase === 'after') {
+      big.textContent = 'Welkom thuis 🇳🇱';
+      sub.textContent = 'De reis zit erop — bewaar de mooie herinneringen.';
+      bar.innerHTML = '';
+      next.innerHTML = '';
+      return null;
+    }
+
+    const cur = TRIP[state.current];
+    const t = today();
+    const leaveIn = dayDiff(d(cur.end), t);
+    const nextStop = TRIP[state.current + 1];
+
+    big.textContent = cur.name;
+    sub.textContent = cur.accom;
+    bar.innerHTML = `
+      <div class="stat"><div class="num">${Math.max(leaveIn,0)}</div><div class="cap">${leaveIn === 1 ? 'dag hier' : 'dagen hier'}</div></div>
+      <div class="stat"><div class="num">${state.current + 1}<span style="opacity:.6">/${TRIP.length}</span></div><div class="cap">stop</div></div>`;
+    if (nextStop) {
+      next.innerHTML = `➜ <span>Hierna: <b>${nextStop.name}</b> · vanaf ${fmtShort(d(nextStop.start))}</span>`;
+    } else {
+      next.innerHTML = `🏁 <span>Laatste stop van de reis</span>`;
+    }
+    return { lat: cur.lat, lng: cur.lng, date: cur.end > new Date().toISOString().slice(0,10) ? new Date().toISOString().slice(0,10) : cur.start, place: cur.name };
+  }
+
+  // ---------- Render de routelijst ----------
+  function renderStops(state) {
+    const wrap = document.getElementById('stops');
+    const t = today();
+    wrap.innerHTML = '';
+    TRIP.forEach((s, i) => {
+      const start = d(s.start), end = d(s.end);
+      const nights = dayDiff(end, start);
+      const isNow = state.phase === 'during' && state.current === i;
+      const isPast = t >= end && !(state.phase==='during' && state.current===i);
+      const card = document.createElement('div');
+      card.className = 'stop' + (isNow ? ' now' : '') + (isPast ? ' past' : '');
+      card.style.animationDelay = (i * 0.05) + 's';
+      const nightsLabel = nights <= 0 ? 'reisdag' : (nights === 1 ? '1 nacht' : nights + ' nachten');
+      card.innerHTML = `
+        <div class="daycol">
+          <div class="dnum">${start.getDate()}</div>
+          <div class="dmon">${MONTHS[start.getMonth()]}</div>
+          <div class="arrow">▾</div>
+        </div>
+        <div class="info">
+          <div class="nm">${s.name}</div>
+          <div class="ac">${s.accom}</div>
+          <div class="meta">
+            ${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}
+            <span class="chip nights">${nightsLabel}</span>
+            <span class="chip wx loading" id="wx-${i}">weer laden…</span>
+          </div>
+        </div>`;
+      wrap.appendChild(card);
+    });
+  }
+
+  // ---------- Weer ophalen (Open-Meteo, gratis, geen sleutel) ----------
+  async function loadWeather(lat, lng, dateStr) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}`
+      + `&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (!json.daily || !json.daily.time) return null;
+    const idx = json.daily.time.indexOf(dateStr);
+    if (idx === -1) return { outOfRange: true };
+    return {
+      code: json.daily.weather_code[idx],
+      max: Math.round(json.daily.temperature_2m_max[idx]),
+      min: Math.round(json.daily.temperature_2m_min[idx])
+    };
+  }
+
+  async function fillStopWeather(state) {
+    let anyShown = false;
+    await Promise.all(TRIP.map(async (s, i) => {
+      const el = document.getElementById('wx-' + i);
+      if (!el) return;
+      const t = today();
+      if (d(s.end) < t) { el.remove(); return; } // verleden: geen weer
+      try {
+        const w = await loadWeather(s.lat, s.lng, s.start);
+        if (!w) { el.textContent = 'weer onbekend'; el.classList.remove('loading'); return; }
+        if (w.outOfRange) { el.textContent = 'weer volgt'; el.classList.remove('loading'); return; }
+        const [em, txt] = wxInfo(w.code);
+        el.classList.remove('loading');
+        el.classList.add(w.max >= 30 ? 'warm' : '');
+        el.innerHTML = `<span class="em">${em}</span> ${w.max}° / ${w.min}° · ${txt}`;
+        anyShown = true;
+      } catch (e) {
+        el.textContent = 'weer offline'; el.classList.remove('loading');
+      }
+    }));
+    if (anyShown) document.getElementById('wx-note').textContent = 'Weer komt live van Open-Meteo en ververst bij elke keer openen.';
+  }
+
+  async function fillHeroWeather(target) {
+    if (!target) return;
+    const box = document.getElementById('hero-wx');
+    try {
+      const w = await loadWeather(target.lat, target.lng, target.date);
+      if (!w || w.outOfRange) {
+        box.style.display = 'inline-flex';
+        box.innerHTML = `<span class="em">🗓️</span> Weersverwachting volgt dichter op de datum`;
+        return;
+      }
+      const [em, txt] = wxInfo(w.code);
+      box.style.display = 'inline-flex';
+      box.innerHTML = `<span class="em">${em}</span> ${target.place}: ${w.max}° / ${w.min}° · ${txt}`;
+    } catch (e) { /* stil */ }
+  }
+
+  // ---------- Opstarten ----------
+  function init() {
+    const state = computeState();
+    document.getElementById('trip-range').textContent =
+      `${fmtShort(d(TRIP[0].start))} – ${fmtShort(d(TRIP[TRIP.length-1].end))}`;
+    const heroTarget = renderHero(state);
+    renderStops(state);
+    fillStopWeather(state);
+    fillHeroWeather(heroTarget);
+  }
+
+  init();
+
+  // ---------- PWA registreren ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+  </script>
+</body>
+</html>
