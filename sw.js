@@ -1,9 +1,10 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v5 (toegangscode toegevoegd).
-const CACHE = 'reisgids-v6';
+// Versie opgehoogd naar v7 (config.js + reisafstanden).
+const CACHE = 'reisgids-v7';
 const SHELL = [
   './',
   './index.html',
+  './config.js',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
@@ -29,6 +30,7 @@ self.addEventListener('fetch', (e) => {
       url.hostname.includes('basemaps.cartocdn.com') ||
       url.hostname.includes('tile.openstreetmap.org') ||
       url.hostname.includes('unpkg.com') ||
+      url.hostname.includes('router.project-osrm.org') ||
       url.hostname.includes('gstatic.com') ||
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('firebaseio.com')) {

@@ -118,6 +118,14 @@
     .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 2px 18px; font-size: 12px; color: var(--ink-soft); }
     .legend i { font-style: normal; }
 
+    /* ---------- Reisafstanden / rijtijden (stap 5) ---------- */
+    .leg { font-size: 12px; color: var(--sea); margin: -6px 0 12px 27px; padding: 5px 0 5px 16px; border-left: 2px dashed var(--line); }
+    .poi-meta { margin-top: 7px; }
+    .drive { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--sea); background: rgba(46,110,126,0.08); padding: 3px 9px; border-radius: 999px; }
+    .drive.dim { color: #b3a796; background: transparent; }
+    .poi-divider { display: flex; align-items: center; gap: 10px; margin: 6px 2px 12px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+    .poi-divider span { flex: 1; height: 1px; background: var(--line); }
+
     /* ---------- Samen plannen / stemmen (stap 4) ---------- */
     .whoami { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 2px 14px; }
     .whoami .lbl { font-size: 13px; color: var(--ink-soft); margin-right: 2px; }
@@ -262,30 +270,13 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Persoonlijke instellingen (sleutels, namen, code) — apart bestand -->
+  <script src="config.js"></script>
   <!-- Firebase (gratis) — voor de gedeelde lijstjes & stemmen -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script>
-  // ======================================================================
-  //  INSTELLINGEN — vul dit één keer in (zie README, "Stap 4").
-  // ======================================================================
-  // 1) Plak hieronder je eigen Firebase-config (firebase.google.com → je web-app).
-const firebaseConfig = {
-  apiKey: "AIzaSyDJ-4jJZY7M11xR0xyQ9eIL0iwhoDTRfLE",
-  authDomain: "vakantieapp-aa5f5.firebaseapp.com",
-  projectId: "vakantieapp-aa5f5",
-  storageBucket: "vakantieapp-aa5f5.firebasestorage.app",
-  messagingSenderId: "254418663408",
-  appId: "1:254418663408:web:8b580c6a1a197ceccc4f35"
-};
-  // 2) De namen van je gezin (gebruikt bij het stemmen).
-  const FAMILY = ['Mark', 'Winneke', 'Jonne', 'Fedde'];
-  // 3) Unieke naam voor deze reis (alleen wijzigen als je meerdere reizen wilt).
-  const TRIP_ID = 'italie2026';
-  // 4) Toegangscode om de app te openen. Kies iets dat je gezin makkelijk onthoudt.
-  //    Laat je dit leeg ('') dan zit er geen slot op.
-  const ACCESS_CODE = 'roma2026';
-  // ======================================================================
+  // Instellingen (firebaseConfig, FAMILY, TRIP_ID, ACCESS_CODE) komen uit config.js.
 
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
@@ -439,6 +430,11 @@ const firebaseConfig = {
         <div class="info"><div class="nm">${s.name}</div><div class="ac">${s.accom}</div>
           <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span></div></div>`;
       wrap.appendChild(card);
+      if (i < TRIP.length - 1) {
+        const leg = document.createElement('div');
+        leg.className = 'leg'; leg.id = 'leg-' + i; leg.textContent = 'afstand laden…';
+        wrap.appendChild(leg);
+      }
     });
   }
 
@@ -480,6 +476,7 @@ const firebaseConfig = {
 
   // ---------- Kaart + bezienswaardigheden ----------
   let map = null, layer = null, markers = [];
+  let driveCache = {}, currentMapStop = 0;
 
   function buildLegend() {
     const used = new Set();
@@ -512,11 +509,11 @@ const firebaseConfig = {
   }
 
   function selectStop(idx) {
+    currentMapStop = idx;
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === idx));
     const stop = TRIP[idx], pois = POIS[idx] || [];
     if (layer) layer.clearLayers(); markers = [];
 
-    // verblijf-marker
     const home = L.marker([stop.lat, stop.lng], { icon: pinIcon('🏡', null, true) })
       .bindPopup(`<b>${stop.name}</b><br>${stop.accom}`);
     layer.addLayer(home);
@@ -531,20 +528,93 @@ const firebaseConfig = {
     if (bounds.length > 1) map.fitBounds(bounds, { padding: [40,40], maxZoom: 12 });
     else map.setView([stop.lat, stop.lng], 12);
 
-    // lijst
-    const list = document.getElementById('poilist'); list.innerHTML = '';
     document.getElementById('poi-count').textContent = `${pois.length} plekken bij ${stop.name}`;
-    pois.forEach((p, j) => {
+    renderPoiList(idx, driveCache[idx] || null);
+    fillDriveTimes(idx);
+  }
+
+  // ---------- POI-lijst (met rijtijd vanaf je verblijf) ----------
+  function renderPoiList(idx, drives) {
+    const pois = POIS[idx] || [];
+    const list = document.getElementById('poilist'); list.innerHTML = '';
+    let arr = pois.map((p, j) => ({ p, j, dur: drives ? drives.dur[j] : null, dist: drives ? drives.dist[j] : null }));
+    if (drives) arr.sort((a, b) => (a.dur ?? 1e9) - (b.dur ?? 1e9));
+    let dividerDone = false;
+    arr.forEach(({ p, j, dur, dist }) => {
+      if (drives && !dividerDone && dur != null && dur > 25) {
+        const dv = document.createElement('div'); dv.className = 'poi-divider';
+        dv.innerHTML = `<span></span>Verder weg — leuk voor een aparte dag<span></span>`;
+        list.appendChild(dv); dividerDone = true;
+      }
       const cat = CATS[p.cat];
-      const row = document.createElement('div');
-      row.className = 'poi';
+      let driveHtml = '';
+      if (dur != null) driveHtml = `<div class="poi-meta"><span class="drive">🚗 ${drives.est ? '~' : ''}${fmtDur(dur)}${dist != null ? ` · ${dist} km` : ''}</span></div>`;
+      else if (drives === null) driveHtml = `<div class="poi-meta"><span class="drive dim">afstand laden…</span></div>`;
+      const row = document.createElement('div'); row.className = 'poi';
       row.innerHTML = `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
-        <div><div class="pn">${p.n}</div><div class="pc">${p.note}</div></div>
+        <div><div class="pn">${p.n}</div><div class="pc">${p.note}</div>${driveHtml}</div>
         <a class="go" href="${mapsLink(p.lat,p.lng,p.n)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Route</a>`;
       row.onclick = () => { map.setView([p.lat, p.lng], 14); markers[j].openPopup();
         document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
       list.appendChild(row);
     });
+  }
+
+  // ---------- Reisafstanden (OSRM, gratis, geen sleutel) ----------
+  function haversine(la1, lo1, la2, lo2) {
+    const R = 6371, r = Math.PI / 180;
+    const dLa = (la2-la1)*r, dLo = (lo2-lo1)*r;
+    const a = Math.sin(dLa/2)**2 + Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dLo/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function estMin(a, b) { return Math.round(haversine(a.lat,a.lng,b.lat,b.lng) * 1.3 / 65 * 60); }
+  function estKm(a, b) { return Math.round(haversine(a.lat,a.lng,b.lat,b.lng) * 1.3); }
+  function fmtDur(min) { return min < 60 ? `${min} min` : `${Math.floor(min/60)} u ${String(min%60).padStart(2,'0')}`; }
+
+  async function osrmTableFromHome(stop, pois) {
+    const coords = [[stop.lng, stop.lat], ...pois.map(p => [p.lng, p.lat])];
+    const str = coords.map(c => c[0] + ',' + c[1]).join(';');
+    const url = `https://router.project-osrm.org/table/v1/driving/${str}?sources=0&annotations=duration,distance`;
+    const res = await fetch(url); const j = await res.json();
+    if (j.code !== 'Ok' || !j.durations) throw new Error('no data');
+    const durs = j.durations[0], dists = j.distances ? j.distances[0] : null;
+    return {
+      est: false,
+      dur: durs.slice(1).map(s => s == null ? null : Math.round(s/60)),
+      dist: dists ? dists.slice(1).map(m => m == null ? null : Math.round(m/1000)) : pois.map(() => null)
+    };
+  }
+
+  async function fillDriveTimes(idx) {
+    if (driveCache[idx]) { if (currentMapStop === idx) renderPoiList(idx, driveCache[idx]); return; }
+    const stop = TRIP[idx], pois = POIS[idx] || [];
+    if (!pois.length) return;
+    let drives;
+    try { drives = await osrmTableFromHome(stop, pois); }
+    catch (e) { drives = { est: true, dur: pois.map(p => estMin(stop, p)), dist: pois.map(p => estKm(stop, p)) }; }
+    driveCache[idx] = drives;
+    if (currentMapStop === idx) renderPoiList(idx, drives);
+  }
+
+  async function fillLegs() {
+    const coords = TRIP.map(s => [s.lng, s.lat]);
+    let matrix = null;
+    try {
+      const str = coords.map(c => c[0] + ',' + c[1]).join(';');
+      const url = `https://router.project-osrm.org/table/v1/driving/${str}?annotations=duration,distance`;
+      const res = await fetch(url); const j = await res.json();
+      if (j.code === 'Ok' && j.durations) matrix = { dur: j.durations, dist: j.distances };
+    } catch (e) {}
+    for (let i = 0; i < TRIP.length - 1; i++) {
+      const el = document.getElementById('leg-' + i); if (!el) continue;
+      let min, km, est = false;
+      if (matrix && matrix.dur[i] && matrix.dur[i][i+1] != null) {
+        min = Math.round(matrix.dur[i][i+1] / 60);
+        km = matrix.dist && matrix.dist[i][i+1] != null ? Math.round(matrix.dist[i][i+1] / 1000) : null;
+      } else { min = estMin(TRIP[i], TRIP[i+1]); km = estKm(TRIP[i], TRIP[i+1]); est = true; }
+      if (min === 0 && km === 0) { el.remove(); continue; }
+      el.innerHTML = `🚗 ${est ? '~' : ''}${fmtDur(min)}${km != null ? ` · ${km} km` : ''}`;
+    }
   }
 
   function initMap(state) {
@@ -748,6 +818,7 @@ const firebaseConfig = {
     const heroTarget = renderHero(state);
     renderStops(state);
     fillStopWeather();
+    fillLegs();
     fillHeroWeather(heroTarget);
     initMap(state);
     initBoard(state);
