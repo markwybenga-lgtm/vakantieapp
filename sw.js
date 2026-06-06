@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
 // Versie opgehoogd naar v5 (toegangscode toegevoegd).
-const CACHE = 'reisgids-v5';
+const CACHE = 'reisgids-v6';
 const SHELL = [
   './',
   './index.html',
