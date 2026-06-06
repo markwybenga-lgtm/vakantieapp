@@ -125,6 +125,11 @@
     .drive.dim { color: #b3a796; background: transparent; }
     .poi-divider { display: flex; align-items: center; gap: 10px; margin: 6px 2px 12px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
     .poi-divider span { flex: 1; height: 1px; background: var(--line); }
+    .poi-links { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+    .go.info { color: var(--sea); }
+    .go.info:hover { background: rgba(46,110,126,0.10); }
+    .chip.link { color: var(--sea); border-color: rgba(46,110,126,0.35); text-decoration: none; cursor: pointer; }
+    .chip.link:hover { background: rgba(46,110,126,0.10); }
 
     /* ---------- Samen plannen / stemmen (stap 4) ---------- */
     .whoami { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 2px 14px; }
@@ -426,9 +431,10 @@
       card.className = 'stop' + (isNow ? ' now' : '') + (isPast ? ' past' : '');
       card.style.animationDelay = (i * 0.05) + 's';
       const nightsLabel = nights <= 0 ? 'reisdag' : (nights === 1 ? '1 nacht' : nights + ' nachten');
+      const infoChip = i < TRIP.length - 1 ? `<a class="chip link" href="${stopInfoUrl(s)}" target="_blank" rel="noopener">Info ↗</a>` : '';
       card.innerHTML = `<div class="daycol"><div class="dnum">${start.getDate()}</div><div class="dmon">${MONTHS[start.getMonth()]}</div><div class="arrow">▾</div></div>
         <div class="info"><div class="nm">${s.name}</div><div class="ac">${s.accom}</div>
-          <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span></div></div>`;
+          <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span>${infoChip}</div></div>`;
       wrap.appendChild(card);
       if (i < TRIP.length - 1) {
         const leg = document.createElement('div');
@@ -503,6 +509,15 @@
     return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name)}`;
   }
 
+  // ---------- Info-links (website / zoekopdracht over de plek) ----------
+  function searchUrl(q) { return 'https://www.google.com/search?q=' + encodeURIComponent(q); }
+  function poiInfoUrl(p, idx) { return p.url || searchUrl(`${p.n} ${TRIP[idx].name} Italië`); }
+  function isLodging(s) { return /agriturismo|masseria|hotel|b&b|camping|resort|villa|casa|sassi/i.test(s || ''); }
+  function stopInfoUrl(s) {
+    if (s.url) return s.url;
+    return searchUrl(isLodging(s.accom) ? `${s.accom} ${s.name}` : `${s.name} Italië`);
+  }
+
   function pinIcon(emoji, color, home) {
     return L.divIcon({ className: '', html: `<div class="pin${home ? ' home' : ''}" style="--c:${color}"><span>${emoji}</span></div>`,
       iconSize: home ? [34,42] : [30,38], iconAnchor: home ? [17,40] : [15,36], popupAnchor: [0,-34] });
@@ -515,14 +530,14 @@
     if (layer) layer.clearLayers(); markers = [];
 
     const home = L.marker([stop.lat, stop.lng], { icon: pinIcon('🏡', null, true) })
-      .bindPopup(`<b>${stop.name}</b><br>${stop.accom}`);
+      .bindPopup(`<b>${stop.name}</b><br>${stop.accom}<br><a href="${stopInfoUrl(stop)}" target="_blank" rel="noopener">Meer info &rarr;</a>`);
     layer.addLayer(home);
     const bounds = [[stop.lat, stop.lng]];
 
     pois.forEach((p, j) => {
       const cat = CATS[p.cat];
       const m = L.marker([p.lat, p.lng], { icon: pinIcon(cat.em, cat.kl) })
-        .bindPopup(`<b>${p.n}</b><br>${p.note}<br><a href="${mapsLink(p.lat,p.lng,p.n)}" target="_blank" rel="noopener">Route &rarr;</a>`);
+        .bindPopup(`<b>${p.n}</b><br>${p.note}<br><a href="${mapsLink(p.lat,p.lng,p.n)}" target="_blank" rel="noopener">Route &rarr;</a> &middot; <a href="${poiInfoUrl(p, idx)}" target="_blank" rel="noopener">Info &rarr;</a>`);
       layer.addLayer(m); markers[j] = m; bounds.push([p.lat, p.lng]);
     });
     if (bounds.length > 1) map.fitBounds(bounds, { padding: [40,40], maxZoom: 12 });
@@ -553,7 +568,10 @@
       const row = document.createElement('div'); row.className = 'poi';
       row.innerHTML = `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
         <div><div class="pn">${p.n}</div><div class="pc">${p.note}</div>${driveHtml}</div>
-        <a class="go" href="${mapsLink(p.lat,p.lng,p.n)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Route</a>`;
+        <div class="poi-links">
+          <a class="go" href="${mapsLink(p.lat,p.lng,p.n)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Route</a>
+          <a class="go info" href="${poiInfoUrl(p, idx)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>
+        </div>`;
       row.onclick = () => { map.setView([p.lat, p.lng], 14); markers[j].openPopup();
         document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
       list.appendChild(row);
