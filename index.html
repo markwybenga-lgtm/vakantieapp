@@ -38,6 +38,22 @@
     }
     .wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 0 20px; }
 
+    /* ---------- Toegangscode ---------- */
+    .lock { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px;
+      background: linear-gradient(160deg, var(--terra) 0%, var(--terra-deep) 100%); }
+    .lock.hide { display: none; }
+    .lock-card { background: #FCF7EE; border-radius: 22px; padding: 34px 26px 28px; width: 100%; max-width: 330px; text-align: center; box-shadow: var(--shadow); }
+    .lock-ico { font-size: 40px; }
+    .lock-t { font-family: 'Fraunces', serif; font-weight: 800; font-size: 30px; margin-top: 6px; letter-spacing: -0.01em; }
+    .lock-s { font-size: 13.5px; color: var(--ink-soft); margin: 6px 0 18px; line-height: 1.5; }
+    .lock-card input { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 13px 14px; font-family: inherit; font-size: 16px; color: var(--ink); text-align: center; letter-spacing: 0.05em; }
+    .lock-card input:focus { outline: none; border-color: var(--terra); }
+    .lock-card button { width: 100%; margin-top: 10px; border: none; background: var(--terra); color: #fff; border-radius: 12px; padding: 13px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .lock-card button:active { transform: scale(0.99); }
+    .lock-err { color: var(--terra-deep); font-size: 13px; min-height: 18px; margin-top: 10px; font-weight: 600; }
+    .shake { animation: shake 0.4s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
+
     header { padding: 34px 0 18px; }
     .kicker { font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--terra-deep); font-weight: 600; }
     .title { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(54px, 18vw, 88px); line-height: 0.92; letter-spacing: -0.02em; margin: 6px 0 4px; }
@@ -102,12 +118,76 @@
     .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 2px 18px; font-size: 12px; color: var(--ink-soft); }
     .legend i { font-style: normal; }
 
+    /* ---------- Samen plannen / stemmen (stap 4) ---------- */
+    .whoami { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 2px 14px; }
+    .whoami .lbl { font-size: 13px; color: var(--ink-soft); margin-right: 2px; }
+    .who { border: 1px solid var(--line); background: #FCF7EE; color: var(--ink-soft); padding: 7px 13px; border-radius: 999px; font-family: inherit; font-size: 13.5px; cursor: pointer; transition: all .15s; }
+    .who.me { background: var(--olive); color: #fff; border-color: transparent; font-weight: 600; }
+
+    .vote { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: center; background: #FCF7EE; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; animation: rise .4s cubic-bezier(.2,.7,.2,1) both; }
+    .vote.lead { border-color: var(--olive); box-shadow: 0 0 0 2px rgba(110,119,64,.16); background: #FBFAF2; }
+    .vote .badge { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--c, var(--paper-2)); color: #fff; }
+    .vote .vn { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; line-height: 1.15; }
+    .vote .vc { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+    .vote .voters { font-size: 11.5px; color: var(--olive); margin-top: 4px; min-height: 14px; }
+    .vote .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .heart { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 12px; font-family: inherit; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; white-space: nowrap; }
+    .heart.on { background: #FBE3D6; border-color: var(--terra); color: var(--terra-deep); font-weight: 600; }
+    .heart .cnt { font-weight: 700; }
+    .del { background: none; border: none; color: #c3b6a4; font-size: 16px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+    .del:hover { color: var(--terra); }
+
+    .addrow { display: flex; gap: 8px; margin: 6px 0 10px; }
+    .addrow input { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 11px 13px; font-family: inherit; font-size: 14px; color: var(--ink); }
+    .addrow input:focus { outline: none; border-color: var(--terra); }
+    .addrow button { border: none; background: var(--terra); color: #fff; border-radius: 12px; padding: 0 16px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .suggs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 6px; }
+    .sugg { border: 1px dashed var(--line); background: transparent; color: var(--ink-soft); border-radius: 999px; padding: 6px 11px; font-family: inherit; font-size: 12.5px; cursor: pointer; }
+    .sugg:hover { border-style: solid; border-color: var(--terra); color: var(--terra-deep); }
+    .board-note { background: var(--paper-2); border-radius: 14px; padding: 16px 18px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
+    .board-note b { color: var(--ink); }
+    .empty { text-align: center; color: var(--ink-soft); font-size: 13.5px; padding: 14px 0 4px; }
+
+    /* ---------- Reisgegevens (vlucht + auto) ---------- */
+    .infocard { background: #FCF7EE; border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 14px; margin-bottom: 12px; }
+    .ic-head { display: flex; align-items: center; gap: 12px; }
+    .ic-ico { width: 40px; height: 40px; border-radius: 12px; background: var(--terra); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .ic-t { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
+    .ic-s { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+    .ic-s b { color: var(--ink); letter-spacing: 0.06em; }
+    .pax { font-size: 12.5px; color: var(--ink-soft); margin: 12px 0 4px; padding: 9px 12px; background: var(--paper-2); border-radius: 10px; line-height: 1.5; }
+    .flight { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+    .fl-tag { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--terra-deep); font-weight: 600; }
+    .fl-route { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin-top: 6px; }
+    .ap { text-align: center; }
+    .ap .code { font-family: 'Fraunces', serif; font-weight: 700; font-size: 24px; line-height: 1; }
+    .ap .time { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+    .arc { text-align: center; color: var(--ink-soft); }
+    .arc .line { border-top: 1.5px dashed var(--line); position: relative; margin: 6px 4px; }
+    .arc .line::after { content: '✈'; position: absolute; right: -2px; top: -9px; font-size: 13px; color: var(--terra); }
+    .arc .fno { font-size: 11.5px; letter-spacing: 0.04em; }
+    .arc .date { font-size: 11.5px; display: block; margin-bottom: 2px; }
+    .fl-seat { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; text-align: center; }
+    .fl-seat b { color: var(--ink); }
+    .cardrow { font-size: 13.5px; color: var(--ink); margin-top: 12px; line-height: 1.5; }
+    .ok { display: inline-block; background: rgba(110,119,64,0.16); color: #4f5730; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.04em; }
+
     footer { margin-top: 30px; text-align: center; font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
     footer .install { margin-top: 8px; }
     .pill-note { display: inline-block; background: var(--paper-2); padding: 8px 14px; border-radius: 999px; margin-top: 10px; }
   </style>
 </head>
 <body>
+  <div id="lock" class="lock">
+    <div class="lock-card">
+      <div class="lock-ico">🌅</div>
+      <div class="lock-t">Bella Italia</div>
+      <div class="lock-s">Voer de toegangscode in om de reisgids te openen.</div>
+      <input id="lock-input" type="password" inputmode="text" autocomplete="off" placeholder="Toegangscode" />
+      <button id="lock-btn">Openen</button>
+      <div class="lock-err" id="lock-err"></div>
+    </div>
+  </div>
   <div class="wrap">
     <header>
       <div class="kicker">Zomer 2026 · Familiereis</div>
@@ -130,8 +210,49 @@
     <div class="legend" id="legend"></div>
     <div id="poilist"></div>
 
+    <div class="section-h"><h2>Samen plannen</h2><span id="board-sub"></span></div>
+    <div id="board"></div>
+
     <div class="section-h"><h2>De route</h2><span id="trip-range"></span></div>
     <div id="stops"></div>
+
+    <div class="section-h"><h2>Reisgegevens</h2><span>KLM · Hertz</span></div>
+
+    <div class="infocard">
+      <div class="ic-head">
+        <span class="ic-ico">✈️</span>
+        <div><div class="ic-t">Vluchten</div><div class="ic-s">Boekingscode <b>XDCXTC</b></div></div>
+      </div>
+      <div class="pax">Mark Wybenga · Winneke Bongaerts · Fedde Wybenga · Jonne Wybenga</div>
+
+      <div class="flight">
+        <div class="fl-tag">Heenvlucht</div>
+        <div class="fl-route">
+          <div class="ap"><div class="code">AMS</div><div class="time">14:15</div></div>
+          <div class="arc"><span class="date">vr 24 jul 2026</span><div class="line"></div><span class="fno">KL1605</span></div>
+          <div class="ap"><div class="code">FCO</div><div class="time">16:25</div></div>
+        </div>
+        <div class="fl-seat">Stoel Mark: <b>19A</b></div>
+      </div>
+
+      <div class="flight">
+        <div class="fl-tag">Terugvlucht</div>
+        <div class="fl-route">
+          <div class="ap"><div class="code">FCO</div><div class="time">17:25</div></div>
+          <div class="arc"><span class="date">do 13 aug 2026</span><div class="line"></div><span class="fno">KL1606</span></div>
+          <div class="ap"><div class="code">AMS</div><div class="time">19:50</div></div>
+        </div>
+        <div class="fl-seat">Stoel Mark: <b>18A</b></div>
+      </div>
+    </div>
+
+    <div class="infocard">
+      <div class="ic-head">
+        <span class="ic-ico">🚗</span>
+        <div><div class="ic-t">Huurauto</div><div class="ic-s">Hertz <span class="ok">bevestigd</span></div></div>
+      </div>
+      <div class="cardrow">📍 Ophalen &amp; inleveren: Luchthaven Rome Fiumicino (FCO)</div>
+    </div>
 
     <footer>
       <div class="pill-note" id="wx-note">Het weer verschijnt vanzelf zodra een datum binnen ±16 dagen ligt.</div>
@@ -141,7 +262,31 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Firebase (gratis) — voor de gedeelde lijstjes & stemmen -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script>
+  // ======================================================================
+  //  INSTELLINGEN — vul dit één keer in (zie README, "Stap 4").
+  // ======================================================================
+  // 1) Plak hieronder je eigen Firebase-config (firebase.google.com → je web-app).
+  const firebaseConfig = {
+    apiKey: "PLAK-HIER-JE-API-KEY",
+    authDomain: "PLAK-HIER.firebaseapp.com",
+    projectId: "PLAK-HIER",
+    storageBucket: "PLAK-HIER.appspot.com",
+    messagingSenderId: "PLAK-HIER",
+    appId: "PLAK-HIER"
+  };
+  // 2) De namen van je gezin (gebruikt bij het stemmen).
+  const FAMILY = ['Papa', 'Mama', 'Kind 1', 'Kind 2'];
+  // 3) Unieke naam voor deze reis (alleen wijzigen als je meerdere reizen wilt).
+  const TRIP_ID = 'italie2026';
+  // 4) Toegangscode om de app te openen. Kies iets dat je gezin makkelijk onthoudt.
+  //    Laat je dit leeg ('') dan zit er geen slot op.
+  const ACCESS_CODE = 'roma2026';
+  // ======================================================================
+
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
@@ -422,6 +567,180 @@
     setTimeout(() => map.invalidateSize(), 200);
   }
 
+  // ---------- Samen plannen / stemmen (Firebase) ----------
+  let db = null, me = null, boardStop = 0, boardUnsub = null, currentDocs = [];
+
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+  function initBoard(state) {
+    const board = document.getElementById('board');
+    const sub = document.getElementById('board-sub');
+
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('PLAK') === 0) {
+      sub.textContent = 'nog niet gekoppeld';
+      board.innerHTML = `<div class="board-note"><b>Bijna klaar!</b> Deze functie deelt jullie lijstjes tussen alle telefoons.
+        Koppel hem eenmalig aan Firebase (gratis) — zie <b>"Stap 4"</b> in de README. Daarna kunnen de kinderen meteen meestemmen.</div>`;
+      return;
+    }
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+    } catch (e) {
+      sub.textContent = 'verbinding mislukt';
+      board.innerHTML = `<div class="board-note">Kon niet met Firebase verbinden. Controleer je gegevens in <b>index.html</b>.</div>`;
+      return;
+    }
+
+    me = lsGet('reisgids-me');
+    if (me && FAMILY.indexOf(me) === -1) me = null;
+
+    board.innerHTML =
+      `<div class="whoami" id="whoami"></div>
+       <div class="stopbar" id="board-tabs"></div>
+       <div class="suggs" id="board-suggs"></div>
+       <div class="addrow"><input id="board-input" type="text" placeholder="Eigen idee toevoegen…" />
+         <button id="board-add">Voeg toe</button></div>
+       <div id="board-list"></div>`;
+
+    let idx = 0;
+    if (state.phase === 'during') idx = state.current;
+    else if (state.phase === 'after') idx = TRIP.length - 2;
+    if (!POIS[idx] || POIS[idx].length === 0) idx = 0;
+
+    renderWhoami();
+    buildBoardTabs(idx);
+    selectBoardStop(idx);
+
+    document.getElementById('board-add').onclick = addFromInput;
+    document.getElementById('board-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') addFromInput(); });
+  }
+
+  function renderWhoami() {
+    const el = document.getElementById('whoami');
+    el.innerHTML = `<span class="lbl">Wie ben jij?</span>` +
+      FAMILY.map(n => `<button class="who${n === me ? ' me' : ''}" data-n="${n}">${n}</button>`).join('');
+    el.querySelectorAll('.who').forEach(b => b.onclick = () => {
+      me = b.dataset.n; lsSet('reisgids-me', me);
+      renderWhoami(); renderVotes();
+    });
+  }
+
+  function buildBoardTabs(activeIdx) {
+    const bar = document.getElementById('board-tabs');
+    bar.innerHTML = '';
+    TRIP.forEach((s, i) => {
+      if (!POIS[i] || POIS[i].length === 0) return;
+      const b = document.createElement('button');
+      b.className = 'tab' + (i === activeIdx ? ' active' : '');
+      b.textContent = s.name; b.dataset.idx = i;
+      b.onclick = () => selectBoardStop(i);
+      bar.appendChild(b);
+    });
+  }
+
+  function selectBoardStop(idx) {
+    boardStop = idx;
+    document.querySelectorAll('#board-tabs .tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === idx));
+    document.getElementById('board-sub').textContent = TRIP[idx].name;
+    if (boardUnsub) boardUnsub();
+    boardUnsub = db.collection('activities')
+      .where('trip', '==', TRIP_ID).where('stop', '==', idx)
+      .onSnapshot((snap) => {
+        currentDocs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderVotes(); renderSuggs();
+      }, (err) => {
+        document.getElementById('board-list').innerHTML =
+          `<div class="board-note">Kon de lijst niet laden. Staat Firestore aan en zijn de regels goed gezet? (Zie README.)</div>`;
+      });
+  }
+
+  function voteCount(v) { return v ? Object.keys(v).length : 0; }
+
+  function renderVotes() {
+    const list = document.getElementById('board-list');
+    if (!currentDocs.length) {
+      list.innerHTML = `<div class="empty">Nog geen ideeën voor ${TRIP[boardStop].name}.<br>Voeg er één toe of tik op een suggestie hieronder.</div>`;
+      return;
+    }
+    const sorted = [...currentDocs].sort((a, b) =>
+      voteCount(b.votes) - voteCount(a.votes) || ((a.created?.seconds || 0) - (b.created?.seconds || 0)));
+    const topVotes = voteCount(sorted[0].votes);
+    list.innerHTML = '';
+    sorted.forEach((it, n) => {
+      const cat = CATS[it.cat] || { em: '📍', kl: '#8A5A2B' };
+      const cnt = voteCount(it.votes);
+      const voters = it.votes ? Object.keys(it.votes) : [];
+      const mineOn = me && it.votes && it.votes[me];
+      const lead = cnt > 0 && cnt === topVotes;
+      const row = document.createElement('div');
+      row.className = 'vote' + (lead ? ' lead' : '');
+      row.style.animationDelay = (n * 0.04) + 's';
+      row.innerHTML =
+        `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
+         <div><div class="vn">${esc(it.title)}</div>
+           ${it.note ? `<div class="vc">${esc(it.note)}</div>` : ''}
+           <div class="voters">${voters.length ? '👏 ' + voters.map(esc).join(', ') : ''}</div></div>
+         <div class="right">
+           <button class="heart${mineOn ? ' on' : ''}" data-id="${it.id}">${mineOn ? '❤' : '🤍'} <span class="cnt">${cnt}</span></button>
+           <button class="del" data-id="${it.id}" title="verwijderen">✕</button>
+         </div>`;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.heart').forEach(b => b.onclick = () => toggleVote(b.dataset.id));
+    list.querySelectorAll('.del').forEach(b => b.onclick = () => removeItem(b.dataset.id));
+  }
+
+  function renderSuggs() {
+    const box = document.getElementById('board-suggs');
+    const have = new Set(currentDocs.map(d => (d.title || '').toLowerCase()));
+    const pois = (POIS[boardStop] || []).filter(p => !have.has(p.n.toLowerCase()));
+    box.innerHTML = pois.map((p, i) =>
+      `<button class="sugg" data-i="${i}">+ ${esc(p.n)}</button>`).join('');
+    box.querySelectorAll('.sugg').forEach(b => b.onclick = () => {
+      const p = pois[+b.dataset.i];
+      addActivity(p.n, p.cat, p.note);
+    });
+  }
+
+  function addFromInput() {
+    const inp = document.getElementById('board-input');
+    const v = inp.value.trim();
+    if (!v) return;
+    addActivity(v, 'stad', '');
+    inp.value = '';
+  }
+
+  function needName() {
+    if (!me) { alert('Kies eerst bovenaan wie je bent, dan kun je stemmen en ideeën toevoegen.'); return true; }
+    return false;
+  }
+
+  function addActivity(title, cat, note) {
+    if (needName()) return;
+    db.collection('activities').add({
+      trip: TRIP_ID, stop: boardStop, title, note: note || '', cat: cat || 'stad',
+      votes: { [me]: true }, addedBy: me, created: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => alert('Toevoegen lukte niet — check je verbinding.'));
+  }
+
+  function toggleVote(id) {
+    if (needName()) return;
+    const it = currentDocs.find(x => x.id === id); if (!it) return;
+    const votes = Object.assign({}, it.votes);
+    if (votes[me]) delete votes[me]; else votes[me] = true;
+    db.collection('activities').doc(id).update({ votes }).catch(() => {});
+  }
+
+  function removeItem(id) {
+    const it = currentDocs.find(x => x.id === id); if (!it) return;
+    if (confirm(`"${it.title}" verwijderen uit de lijst?`)) {
+      db.collection('activities').doc(id).delete().catch(() => {});
+    }
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
   // ---------- Opstarten ----------
   function init() {
     const state = computeState();
@@ -431,8 +750,35 @@
     fillStopWeather();
     fillHeroWeather(heroTarget);
     initMap(state);
+    initBoard(state);
   }
-  init();
+
+  // ---------- Toegangscode-gate ----------
+  function appUnlocked() { return !ACCESS_CODE || lsGet('reisgids-unlock') === ACCESS_CODE; }
+  let booted = false;
+  function boot() { if (booted) return; booted = true; init(); }
+  function gate() {
+    const lock = document.getElementById('lock');
+    if (appUnlocked()) { lock.classList.add('hide'); boot(); return; }
+    const inp = document.getElementById('lock-input');
+    const err = document.getElementById('lock-err');
+    const card = lock.querySelector('.lock-card');
+    function tryUnlock() {
+      if (inp.value === ACCESS_CODE) {
+        lsSet('reisgids-unlock', ACCESS_CODE);
+        lock.classList.add('hide');
+        boot();
+      } else {
+        err.textContent = 'Onjuiste code — probeer opnieuw.';
+        card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+        inp.select();
+      }
+    }
+    document.getElementById('lock-btn').onclick = tryUnlock;
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
+    setTimeout(() => inp.focus(), 120);
+  }
+  gate();
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
