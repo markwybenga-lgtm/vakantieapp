@@ -111,6 +111,9 @@
 
     /* ---------- Kaart + bezienswaardigheden (stap 3) ---------- */
     #map { height: 320px; border-radius: 18px; border: 1px solid var(--line); box-shadow: var(--shadow); background: #dfe7e3; z-index: 1; }
+    #routemap { height: 280px; border-radius: 18px; border: 1px solid var(--line); box-shadow: var(--shadow); background: #dfe7e3; z-index: 1; margin-top: 22px; }
+    .numpin { width: 26px; height: 26px; border-radius: 50%; background: var(--terra); color: #fff; border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
     .leaflet-container { font-family: 'Spline Sans', sans-serif; }
     .pin { width: 30px; height: 30px; background: var(--c, var(--terra)); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 7px rgba(0,0,0,0.35); border: 2px solid #fff; }
     .pin span { transform: rotate(45deg); font-size: 14px; line-height: 1; }
@@ -246,6 +249,7 @@
     </section><!-- /p-plannen -->
 
     <section class="panel" id="p-route">
+    <div id="routemap"></div>
     <div class="section-h"><h2>De route</h2><span id="trip-range"></span></div>
     <div id="stops"></div>
     <div class="pill-note" id="wx-note" style="display:block;text-align:center;margin:14px auto 0;">Het weer verschijnt vanzelf zodra een datum binnen ±16 dagen ligt.</div>
@@ -514,6 +518,7 @@
   // ---------- Kaart + bezienswaardigheden ----------
   let map = null, layer = null, markers = [];
   let driveCache = {}, currentMapStop = 0;
+  let routeMap = null;
 
   function buildLegend() {
     const used = new Set();
@@ -664,6 +669,38 @@
       if (min === 0 && km === 0) { el.remove(); continue; }
       el.innerHTML = `🚗 ${est ? '~' : ''}${fmtDur(min)}${km != null ? ` · ${km} km` : ''}`;
     }
+  }
+
+  // ---------- Overzichtskaart met de route (Route-tab) ----------
+  function numIcon(n) {
+    return L.divIcon({ className: '', html: `<div class="numpin">${n}</div>`, iconSize: [26,26], iconAnchor: [13,13], popupAnchor: [0,-12] });
+  }
+  function routeCoords() { return TRIP.map(s => [s.lat, s.lng]); }
+  function initRouteMap() {
+    if (typeof L === 'undefined') {
+      document.getElementById('routemap').style.display = 'none';
+      return;
+    }
+    routeMap = L.map('routemap', {
+      dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,
+      touchZoom: false, keyboard: false, zoomControl: false
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19, subdomains: 'abcd'
+    }).addTo(routeMap);
+    const coords = routeCoords();
+    L.polyline(coords, { color: '#C45A38', weight: 3, dashArray: '7 7', opacity: 0.85 }).addTo(routeMap);
+    TRIP.forEach((s, i) => {
+      L.marker([s.lat, s.lng], { icon: numIcon(i + 1) }).addTo(routeMap)
+        .bindPopup(`<b>${i + 1}. ${s.name}</b><br>${fmtShort(d(s.start))}`);
+    });
+    routeMap.fitBounds(coords, { padding: [34, 34] });
+    setTimeout(() => routeMap.invalidateSize(), 200);
+  }
+  function refreshRouteMap() {
+    if (!routeMap) return;
+    routeMap.invalidateSize();
+    routeMap.fitBounds(routeCoords(), { padding: [34, 34] });
   }
 
   function initMap(state) {
@@ -868,6 +905,9 @@
     if (name === 'ontdek' && map) {
       setTimeout(() => { map.invalidateSize(); selectStop(currentMapStop); }, 60);
     }
+    if (name === 'route') {
+      setTimeout(refreshRouteMap, 60);
+    }
   }
 
   // ---------- Opstarten ----------
@@ -880,6 +920,7 @@
     fillLegs();
     fillHeroWeather(heroTarget);
     initMap(state);
+    initRouteMap();
     initBoard(state);
     document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
   }
