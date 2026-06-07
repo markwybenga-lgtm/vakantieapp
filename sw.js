@@ -1,6 +1,6 @@
-// Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v11 (Ontdek vervangen door klikbare bestemmingen).
-const CACHE = 'reisgids-v11';
+/ Service worker — maakt er een installeerbare, offline-bruikbare app van.
+// Versie opgehoogd naar v13 (ingelogde naam bovenaan).
+const CACHE = 'reisgids-v13';
 const SHELL = [
   './',
   './index.html',
@@ -10,11 +10,11 @@ const SHELL = [
   './icon-512.png',
   './apple-touch-icon.png'
 ];
-
+ 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
-
+ 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
@@ -22,7 +22,7 @@ self.addEventListener('activate', (e) => {
     ).then(() => self.clients.claim())
   );
 });
-
+ 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   // Weer-API en kaarttegels nooit uit de shell-cache serveren: vers van het netwerk.
@@ -40,3 +40,4 @@ self.addEventListener('fetch', (e) => {
   // App-shell: eerst cache, dan netwerk.
   e.respondWith(caches.match(e.request).then((cached) => cached || fetch(e.request)));
 });
+ 
