@@ -41,6 +41,10 @@
     /* ---------- Tabbladen + onderbalk (stap 5c) ---------- */
     .panel { display: none; }
     .panel.active { display: block; animation: fadeIn 0.25s ease; }
+    .userbar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 2px 0; font-size: 12.5px; color: var(--ink-soft); }
+    .userbar b { color: var(--ink); }
+    .userbar b::before { content: '👤 '; font-weight: 400; }
+    .userbar button { background: none; border: none; color: var(--sea); font-family: inherit; font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
     .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 500; display: flex;
       background: rgba(252,247,238,0.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
@@ -64,6 +68,13 @@
     .lock-card button { width: 100%; margin-top: 10px; border: none; background: var(--terra); color: #fff; border-radius: 12px; padding: 13px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
     .lock-card button:active { transform: scale(0.99); }
     .lock-err { color: var(--terra-deep); font-size: 13px; min-height: 18px; margin-top: 10px; font-weight: 600; }
+    .who-pick { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
+    .who-pick .who { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); padding: 9px 15px; border-radius: 999px; font-family: inherit; font-size: 14px; cursor: pointer; }
+    .who-pick .who.me { background: var(--olive); color: #fff; border-color: transparent; font-weight: 600; }
+    .poi.lead { border-color: var(--olive); box-shadow: 0 0 0 2px rgba(110,119,64,0.16); background: #FBFAF2; }
+    .poi .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .poi-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .voters { font-size: 11.5px; color: var(--olive); margin-top: 4px; }
     .shake { animation: shake 0.4s; }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
@@ -217,13 +228,18 @@
     <div class="lock-card">
       <div class="lock-ico">🌅</div>
       <div class="lock-t">Bella Italia</div>
-      <div class="lock-s">Voer de toegangscode in om de reisgids te openen.</div>
-      <input id="lock-input" type="password" inputmode="text" autocomplete="off" placeholder="Toegangscode" />
-      <button id="lock-btn">Openen</button>
+      <div class="lock-s">Kies wie je bent en vul de gezinscode in.</div>
+      <div class="who-pick" id="who-pick"></div>
+      <input id="lock-input" type="password" inputmode="text" autocomplete="off" placeholder="Gezinscode" />
+      <button id="lock-btn">Inloggen</button>
       <div class="lock-err" id="lock-err"></div>
     </div>
   </div>
   <div class="wrap">
+    <div class="userbar" id="userbar" style="display:none">
+      <span>Ingelogd als <b id="userbar-name"></b></span>
+      <button id="userbar-logout">uitloggen</button>
+    </div>
     <section class="panel active" id="p-vandaag">
     <header>
       <div class="kicker">Zomer 2026 · Familiereis</div>
@@ -248,11 +264,6 @@
     <div class="legend" id="legend"></div>
     <div id="poilist"></div>
     </section><!-- /p-detail -->
-
-    <section class="panel" id="p-plannen">
-    <div class="section-h"><h2>Samen plannen</h2><span id="board-sub"></span></div>
-    <div id="board"></div>
-    </section><!-- /p-plannen -->
 
     <section class="panel" id="p-route">
     <div id="routemap"></div>
@@ -309,7 +320,6 @@
   <nav class="tabbar" id="tabbar">
     <button data-tab="vandaag" class="active">☀️<span>Vandaag</span></button>
     <button data-tab="route">🧭<span>Route</span></button>
-    <button data-tab="plannen">🗳️<span>Plannen</span></button>
     <button data-tab="reisinfo">✈️<span>Reisinfo</span></button>
   </nav>
 
@@ -587,13 +597,12 @@
     if (bounds.length > 1) map.fitBounds(bounds, { padding: [40,40], maxZoom: 12 });
     else map.setView([stop.lat, stop.lng], 12);
 
-    document.getElementById('poi-count').textContent = `${pois.length} plekken bij ${stop.name}`;
-    renderPoiList(idx, driveCache[idx] || null);
+    watchDetail(idx);
     fillDriveTimes(idx);
   }
 
   // ---------- POI-lijst (met rijtijd vanaf je verblijf) ----------
-  function renderPoiList(idx, drives) {
+  function renderPoiList_OLD(idx, drives) {
     const pois = POIS[idx] || [];
     const list = document.getElementById('poilist'); list.innerHTML = '';
     let arr = pois.map((p, j) => ({ p, j, dur: drives ? drives.dur[j] : null, dist: drives ? drives.dist[j] : null }));
@@ -648,14 +657,14 @@
   }
 
   async function fillDriveTimes(idx) {
-    if (driveCache[idx]) { if (currentMapStop === idx) renderPoiList(idx, driveCache[idx]); return; }
+    if (driveCache[idx]) { if (currentMapStop === idx) renderDetailList(idx); return; }
     const stop = TRIP[idx], pois = POIS[idx] || [];
     if (!pois.length) return;
     let drives;
     try { drives = await osrmTableFromHome(stop, pois); }
     catch (e) { drives = { est: true, dur: pois.map(p => estMin(stop, p)), dist: pois.map(p => estKm(stop, p)) }; }
     driveCache[idx] = drives;
-    if (currentMapStop === idx) renderPoiList(idx, drives);
+    if (currentMapStop === idx) renderDetailList(idx);
   }
 
   async function fillLegs() {
@@ -742,174 +751,144 @@
   }
 
   // ---------- Samen plannen / stemmen (Firebase) ----------
-  let db = null, me = null, boardStop = 0, boardUnsub = null, currentDocs = [];
+  let db = null, me = null, detailUnsub = null, detailDocs = [], firebaseReady = false;
 
   const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
 
-  function initBoard(state) {
-    const board = document.getElementById('board');
-    const sub = document.getElementById('board-sub');
-
-    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('PLAK') === 0) {
-      sub.textContent = 'nog niet gekoppeld';
-      board.innerHTML = `<div class="board-note"><b>Bijna klaar!</b> Deze functie deelt jullie lijstjes tussen alle telefoons.
-        Koppel hem eenmalig aan Firebase (gratis) — zie <b>"Stap 4"</b> in de README. Daarna kunnen de kinderen meteen meestemmen.</div>`;
-      return;
-    }
+  function initData() {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('PLAK') === 0) { firebaseReady = false; return; }
     try {
       if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-    } catch (e) {
-      sub.textContent = 'verbinding mislukt';
-      board.innerHTML = `<div class="board-note">Kon niet met Firebase verbinden. Controleer je gegevens in <b>index.html</b>.</div>`;
-      return;
-    }
-
-    me = lsGet('reisgids-me');
-    if (me && FAMILY.indexOf(me) === -1) me = null;
-
-    board.innerHTML =
-      `<div class="whoami" id="whoami"></div>
-       <div class="stopbar" id="board-tabs"></div>
-       <div class="suggs" id="board-suggs"></div>
-       <div class="addrow"><input id="board-input" type="text" placeholder="Eigen idee toevoegen…" />
-         <button id="board-add">Voeg toe</button></div>
-       <div id="board-list"></div>`;
-
-    let idx = 0;
-    if (state.phase === 'during') idx = state.current;
-    else if (state.phase === 'after') idx = TRIP.length - 2;
-    if (!POIS[idx] || POIS[idx].length === 0) idx = 0;
-
-    renderWhoami();
-    buildBoardTabs(idx);
-    selectBoardStop(idx);
-
-    document.getElementById('board-add').onclick = addFromInput;
-    document.getElementById('board-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') addFromInput(); });
-  }
-
-  function renderWhoami() {
-    const el = document.getElementById('whoami');
-    el.innerHTML = `<span class="lbl">Wie ben jij?</span>` +
-      FAMILY.map(n => `<button class="who${n === me ? ' me' : ''}" data-n="${n}">${n}</button>`).join('');
-    el.querySelectorAll('.who').forEach(b => b.onclick = () => {
-      me = b.dataset.n; lsSet('reisgids-me', me);
-      renderWhoami(); renderVotes();
-    });
-  }
-
-  function buildBoardTabs(activeIdx) {
-    const bar = document.getElementById('board-tabs');
-    bar.innerHTML = '';
-    TRIP.forEach((s, i) => {
-      if (!POIS[i] || POIS[i].length === 0) return;
-      const b = document.createElement('button');
-      b.className = 'tab' + (i === activeIdx ? ' active' : '');
-      b.textContent = s.name; b.dataset.idx = i;
-      b.onclick = () => selectBoardStop(i);
-      bar.appendChild(b);
-    });
-  }
-
-  function selectBoardStop(idx) {
-    boardStop = idx;
-    document.querySelectorAll('#board-tabs .tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === idx));
-    document.getElementById('board-sub').textContent = TRIP[idx].name;
-    if (boardUnsub) boardUnsub();
-    boardUnsub = db.collection('activities')
-      .where('trip', '==', TRIP_ID).where('stop', '==', idx)
-      .onSnapshot((snap) => {
-        currentDocs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        renderVotes(); renderSuggs();
-      }, (err) => {
-        document.getElementById('board-list').innerHTML =
-          `<div class="board-note">Kon de lijst niet laden. Staat Firestore aan en zijn de regels goed gezet? (Zie README.)</div>`;
-      });
+      db = firebase.firestore(); firebaseReady = true;
+    } catch (e) { firebaseReady = false; }
   }
 
   function voteCount(v) { return v ? Object.keys(v).length : 0; }
 
-  function renderVotes() {
-    const list = document.getElementById('board-list');
-    if (!currentDocs.length) {
-      list.innerHTML = `<div class="empty">Nog geen ideeën voor ${TRIP[boardStop].name}.<br>Voeg er één toe of tik op een suggestie hieronder.</div>`;
-      return;
-    }
-    const sorted = [...currentDocs].sort((a, b) =>
-      voteCount(b.votes) - voteCount(a.votes) || ((a.created?.seconds || 0) - (b.created?.seconds || 0)));
-    const topVotes = voteCount(sorted[0].votes);
-    list.innerHTML = '';
-    sorted.forEach((it, n) => {
-      const cat = CATS[it.cat] || { em: '📍', kl: '#8A5A2B' };
-      const cnt = voteCount(it.votes);
-      const voters = it.votes ? Object.keys(it.votes) : [];
-      const mineOn = me && it.votes && it.votes[me];
-      const lead = cnt > 0 && cnt === topVotes;
-      const row = document.createElement('div');
-      row.className = 'vote' + (lead ? ' lead' : '');
-      row.style.animationDelay = (n * 0.04) + 's';
-      row.innerHTML =
-        `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
-         <div><div class="vn">${esc(it.title)}</div>
-           ${it.note ? `<div class="vc">${esc(it.note)}</div>` : ''}
-           <div class="voters">${voters.length ? '👏 ' + voters.map(esc).join(', ') : ''}</div></div>
-         <div class="right">
-           <button class="heart${mineOn ? ' on' : ''}" data-id="${it.id}">${mineOn ? '❤' : '🤍'} <span class="cnt">${cnt}</span></button>
-           <button class="del" data-id="${it.id}" title="verwijderen">✕</button>
-         </div>`;
-      list.appendChild(row);
-    });
-    list.querySelectorAll('.heart').forEach(b => b.onclick = () => toggleVote(b.dataset.id));
-    list.querySelectorAll('.del').forEach(b => b.onclick = () => removeItem(b.dataset.id));
+  // Luister naar de gedeelde ideeën/stemmen van deze bestemming.
+  function watchDetail(idx) {
+    detailDocs = [];
+    if (detailUnsub) { detailUnsub(); detailUnsub = null; }
+    if (!firebaseReady) { renderDetailList(idx); return; }
+    detailUnsub = db.collection('activities')
+      .where('trip', '==', TRIP_ID).where('stop', '==', idx)
+      .onSnapshot(
+        (snap) => { if (currentMapStop !== idx) return; detailDocs = snap.docs.map(dc => ({ id: dc.id, ...dc.data() })); renderDetailList(idx); },
+        () => { renderDetailList(idx); }
+      );
   }
 
-  function renderSuggs() {
-    const box = document.getElementById('board-suggs');
-    const have = new Set(currentDocs.map(d => (d.title || '').toLowerCase()));
-    const pois = (POIS[boardStop] || []).filter(p => !have.has(p.n.toLowerCase()));
-    box.innerHTML = pois.map((p, i) =>
-      `<button class="sugg" data-i="${i}">+ ${esc(p.n)}</button>`).join('');
-    box.querySelectorAll('.sugg').forEach(b => b.onclick = () => {
-      const p = pois[+b.dataset.i];
-      addActivity(p.n, p.cat, p.note);
-    });
-  }
-
-  function addFromInput() {
-    const inp = document.getElementById('board-input');
-    const v = inp.value.trim();
-    if (!v) return;
-    addActivity(v, 'stad', '');
-    inp.value = '';
+  // Een gestemd item aan/uit zetten; maakt zo nodig een doc aan voor een vaste plek.
+  function voteItem(it, idx) {
+    if (!firebaseReady || needName()) return;
+    if (it.doc) { toggleVote(it.doc.id); return; }
+    db.collection('activities').add({
+      trip: TRIP_ID, stop: idx, title: it.title, note: it.note || '', cat: it.cat || 'stad',
+      votes: { [me]: true }, addedBy: me, created: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {});
   }
 
   function needName() {
-    if (!me) { alert('Kies eerst bovenaan wie je bent, dan kun je stemmen en ideeën toevoegen.'); return true; }
+    if (!me) { alert('Log eerst in.'); return true; }
     return false;
   }
 
-  function addActivity(title, cat, note) {
-    if (needName()) return;
+  function addActivity(title, cat, note, idx) {
+    if (!firebaseReady || needName()) return;
     db.collection('activities').add({
-      trip: TRIP_ID, stop: boardStop, title, note: note || '', cat: cat || 'stad',
+      trip: TRIP_ID, stop: idx, title, note: note || '', cat: cat || 'stad',
       votes: { [me]: true }, addedBy: me, created: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(() => alert('Toevoegen lukte niet — check je verbinding.'));
   }
 
   function toggleVote(id) {
     if (needName()) return;
-    const it = currentDocs.find(x => x.id === id); if (!it) return;
+    const it = detailDocs.find(x => x.id === id); if (!it) return;
     const votes = Object.assign({}, it.votes);
     if (votes[me]) delete votes[me]; else votes[me] = true;
     db.collection('activities').doc(id).update({ votes }).catch(() => {});
   }
 
   function removeItem(id) {
-    const it = currentDocs.find(x => x.id === id); if (!it) return;
+    const it = detailDocs.find(x => x.id === id); if (!it) return;
     if (confirm(`"${it.title}" verwijderen uit de lijst?`)) {
       db.collection('activities').doc(id).delete().catch(() => {});
+    }
+  }
+
+  // ---------- Detail-lijst: vaste plekken + eigen ideeën, met stemmen ----------
+  function renderDetailList(idx) {
+    const pois = POIS[idx] || [];
+    const drives = driveCache[idx] || null;
+    const list = document.getElementById('poilist'); if (!list) return;
+    list.innerHTML = '';
+    document.getElementById('poi-count').textContent = `${pois.length} plekken bij ${TRIP[idx].name}`;
+
+    const byTitle = {};
+    detailDocs.forEach(dc => { byTitle[(dc.title || '').toLowerCase()] = dc; });
+    const poiTitles = new Set(pois.map(p => p.n.toLowerCase()));
+
+    let items = pois.map((p, j) => {
+      const dc = byTitle[p.n.toLowerCase()];
+      return { poi: p, j, doc: dc || null, title: p.n, note: p.note, cat: p.cat,
+        votes: dc ? dc.votes : null, dur: drives ? drives.dur[j] : null, dist: drives ? drives.dist[j] : null, custom: false };
+    });
+    detailDocs.filter(dc => !poiTitles.has((dc.title || '').toLowerCase())).forEach(dc => {
+      items.push({ poi: null, j: -1, doc: dc, title: dc.title, note: dc.note, cat: dc.cat, votes: dc.votes, dur: null, dist: null, custom: true });
+    });
+
+    items.sort((a, b) => voteCount(b.votes) - voteCount(a.votes) || ((a.dur ?? 1e9) - (b.dur ?? 1e9)));
+    const top = items.length ? voteCount(items[0].votes) : 0;
+
+    items.forEach((it, n) => {
+      const cat = CATS[it.cat] || { em: '📍', kl: '#8A5A2B' };
+      const cnt = voteCount(it.votes);
+      const voters = it.votes ? Object.keys(it.votes) : [];
+      const mineOn = me && it.votes && it.votes[me];
+      const lead = cnt > 0 && cnt === top;
+      let driveHtml = '';
+      if (!it.custom) {
+        if (it.dur != null) driveHtml = `<span class="drive">🚗 ${drives.est ? '~' : ''}${fmtDur(it.dur)}${it.dist != null ? ` · ${it.dist} km` : ''}</span>`;
+        else if (drives === null) driveHtml = `<span class="drive dim">afstand…</span>`;
+      }
+      const routeUrl = it.custom ? searchUrl(`${it.title} ${TRIP[idx].name}`) : mapsLink(it.poi.lat, it.poi.lng, it.poi.n);
+      const infoUrl = it.custom ? searchUrl(`${it.title} ${TRIP[idx].name} Italië`) : poiInfoUrl(it.poi, idx);
+      const heart = firebaseReady
+        ? `<button class="heart${mineOn ? ' on' : ''}" data-act="vote" data-i="${n}">${mineOn ? '❤' : '🤍'} <span class="cnt">${cnt}</span></button>` : '';
+      const del = (it.custom && firebaseReady) ? `<button class="del" data-act="del" data-i="${n}" title="verwijderen">✕</button>` : '';
+
+      const row = document.createElement('div'); row.className = 'poi' + (lead ? ' lead' : '');
+      row.style.animationDelay = (n * 0.03) + 's';
+      row.innerHTML =
+        `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
+         <div><div class="pn">${esc(it.title)}</div>${it.note ? `<div class="pc">${esc(it.note)}</div>` : ''}
+           ${driveHtml ? `<div class="poi-meta">${driveHtml}</div>` : ''}
+           ${voters.length ? `<div class="voters">👏 ${voters.map(esc).join(', ')}</div>` : ''}
+           <div class="poi-actions">
+             <a class="go" href="${routeUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Route</a>
+             <a class="go info" href="${infoUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>
+           </div></div>
+         <div class="right">${heart}${del}</div>`;
+      if (!it.custom) row.onclick = (e) => { if (e.target.closest('a,button')) return; map.setView([it.poi.lat, it.poi.lng], 14); if (markers[it.j]) markers[it.j].openPopup(); document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-act="vote"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); voteItem(items[+b.dataset.i], idx); });
+    list.querySelectorAll('[data-act="del"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const it = items[+b.dataset.i]; if (it.doc) removeItem(it.doc.id); });
+
+    if (firebaseReady) {
+      const add = document.createElement('div'); add.className = 'addrow';
+      add.innerHTML = `<input id="detail-input" type="text" placeholder="Eigen idee toevoegen…" /><button id="detail-add">Voeg toe</button>`;
+      list.appendChild(add);
+      const inp = add.querySelector('#detail-input');
+      const go = () => { const v = inp.value.trim(); if (v) { addActivity(v, 'stad', '', idx); inp.value = ''; } };
+      add.querySelector('#detail-add').onclick = go;
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    } else {
+      const note = document.createElement('div'); note.className = 'board-note';
+      note.innerHTML = `Stemmen werkt zodra de app aan Firebase gekoppeld is (zie README).`;
+      list.appendChild(note);
     }
   }
 
@@ -939,35 +918,56 @@
     fillHeroWeather(heroTarget);
     initMap(state);
     initRouteMap();
-    initBoard(state);
+    initData();
     document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
     document.getElementById('detail-back').onclick = () => showTab('route');
+
+    if (me) {
+      document.getElementById('userbar-name').textContent = me;
+      document.getElementById('userbar').style.display = 'flex';
+    }
+    document.getElementById('userbar-logout').onclick = () => {
+      try { localStorage.removeItem('reisgids-me'); localStorage.removeItem('reisgids-unlock'); } catch (e) {}
+      location.reload();
+    };
   }
 
-  // ---------- Toegangscode-gate ----------
-  function appUnlocked() { return !ACCESS_CODE || lsGet('reisgids-unlock') === ACCESS_CODE; }
+  // ---------- Login (naam + gezinscode) ----------
+  function storedMe() { const m = lsGet('reisgids-me'); return (m && FAMILY.indexOf(m) > -1) ? m : null; }
+  function codeOk() { return !ACCESS_CODE || lsGet('reisgids-unlock') === ACCESS_CODE; }
+  function appUnlocked() { return !!storedMe() && codeOk(); }
   let booted = false;
   function boot() { if (booted) return; booted = true; init(); }
   function gate() {
     const lock = document.getElementById('lock');
-    if (appUnlocked()) { lock.classList.add('hide'); boot(); return; }
+    if (appUnlocked()) { me = storedMe(); lock.classList.add('hide'); boot(); return; }
+
+    let picked = storedMe();
+    const pick = document.getElementById('who-pick');
+    function renderPick() {
+      pick.innerHTML = FAMILY.map(n => `<button type="button" class="who${n === picked ? ' me' : ''}" data-n="${n}">${n}</button>`).join('');
+      pick.querySelectorAll('.who').forEach(b => b.onclick = () => { picked = b.dataset.n; renderPick(); });
+    }
+    renderPick();
+
     const inp = document.getElementById('lock-input');
     const err = document.getElementById('lock-err');
     const card = lock.querySelector('.lock-card');
-    function tryUnlock() {
-      if (inp.value === ACCESS_CODE) {
-        lsSet('reisgids-unlock', ACCESS_CODE);
-        lock.classList.add('hide');
-        boot();
-      } else {
-        err.textContent = 'Onjuiste code — probeer opnieuw.';
+    if (!ACCESS_CODE) inp.style.display = 'none';
+
+    function tryLogin() {
+      if (!picked) { err.textContent = 'Kies eerst je naam.'; return; }
+      if (ACCESS_CODE && inp.value !== ACCESS_CODE) {
+        err.textContent = 'Onjuiste gezinscode.';
         card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
-        inp.select();
+        inp.select(); return;
       }
+      me = picked; lsSet('reisgids-me', me);
+      if (ACCESS_CODE) lsSet('reisgids-unlock', ACCESS_CODE);
+      lock.classList.add('hide'); boot();
     }
-    document.getElementById('lock-btn').onclick = tryUnlock;
-    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryUnlock(); });
-    setTimeout(() => inp.focus(), 120);
+    document.getElementById('lock-btn').onclick = tryLogin;
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(); });
   }
   gate();
 
