@@ -94,6 +94,12 @@
     @keyframes rise { to { opacity: 1; transform: none; } }
     .stop.now { border-color: var(--terra); box-shadow: 0 0 0 2px rgba(196,90,56,0.18); background: #FFF9F0; }
     .stop.past { opacity: 0.55; }
+    .stop.clickable { cursor: pointer; }
+    .stop.clickable:hover { border-color: var(--terra); transform: translateY(-1px); box-shadow: 0 10px 22px -16px rgba(42,32,24,0.5); }
+    .stop.clickable .nm { color: var(--terra-deep); }
+    .stop .chev { color: var(--terra); font-weight: 700; margin-left: 2px; }
+    .backbtn { background: none; border: none; color: var(--sea); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 16px 0 0; }
+    .backbtn:hover { text-decoration: underline; }
     .daycol { text-align: center; padding-top: 2px; }
     .daycol .dnum { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; line-height: 0.9; color: var(--terra-deep); }
     .daycol .dmon { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-top: 3px; }
@@ -235,13 +241,13 @@
     </section>
     </section><!-- /p-vandaag -->
 
-    <section class="panel" id="p-ontdek">
-    <div class="section-h"><h2>Wat is er te doen</h2><span id="poi-count"></span></div>
-    <div class="stopbar" id="stopbar"></div>
+    <section class="panel" id="p-detail">
+    <button class="backbtn" id="detail-back">‹ Terug naar route</button>
+    <div class="section-h"><h2 id="detail-title">Bestemming</h2><span id="poi-count"></span></div>
     <div id="map"></div>
     <div class="legend" id="legend"></div>
     <div id="poilist"></div>
-    </section><!-- /p-ontdek -->
+    </section><!-- /p-detail -->
 
     <section class="panel" id="p-plannen">
     <div class="section-h"><h2>Samen plannen</h2><span id="board-sub"></span></div>
@@ -303,7 +309,6 @@
   <nav class="tabbar" id="tabbar">
     <button data-tab="vandaag" class="active">☀️<span>Vandaag</span></button>
     <button data-tab="route">🧭<span>Route</span></button>
-    <button data-tab="ontdek">🗺️<span>Ontdek</span></button>
     <button data-tab="plannen">🗳️<span>Plannen</span></button>
     <button data-tab="reisinfo">✈️<span>Reisinfo</span></button>
   </nav>
@@ -466,10 +471,14 @@
       card.className = 'stop' + (isNow ? ' now' : '') + (isPast ? ' past' : '');
       card.style.animationDelay = (i * 0.05) + 's';
       const nightsLabel = nights <= 0 ? 'reisdag' : (nights === 1 ? '1 nacht' : nights + ' nachten');
-      const infoChip = i < TRIP.length - 1 ? `<a class="chip link" href="${stopInfoUrl(s)}" target="_blank" rel="noopener">Info ↗</a>` : '';
+      const infoChip = i < TRIP.length - 1 ? `<a class="chip link" href="${stopInfoUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>` : '';
+      const canOpen = (POIS[i] || []).length > 0;
+      if (canOpen) card.classList.add('clickable');
+      const chev = canOpen ? ' <span class="chev">›</span>' : '';
       card.innerHTML = `<div class="daycol"><div class="dnum">${start.getDate()}</div><div class="dmon">${MONTHS[start.getMonth()]}</div><div class="arrow">▾</div></div>
-        <div class="info"><div class="nm">${s.name}</div><div class="ac">${s.accom}</div>
+        <div class="info"><div class="nm">${s.name}${chev}</div><div class="ac">${s.accom}</div>
           <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span>${infoChip}</div></div>`;
+      if (canOpen) card.onclick = () => openDestination(i);
       wrap.appendChild(card);
       if (i < TRIP.length - 1) {
         const leg = document.createElement('div');
@@ -561,7 +570,6 @@
 
   function selectStop(idx) {
     currentMapStop = idx;
-    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', +t.dataset.idx === idx));
     const stop = TRIP[idx], pois = POIS[idx] || [];
     if (layer) layer.clearLayers(); markers = [];
 
@@ -718,9 +726,19 @@
     if (state.phase === 'during') active = state.current;
     else if (state.phase === 'after') active = TRIP.length - 2;
     if (!POIS[active] || POIS[active].length === 0) active = 0;
+    currentMapStop = active;
 
-    buildLegend(); buildTabs(active); selectStop(active);
+    buildLegend();
     setTimeout(() => map.invalidateSize(), 200);
+  }
+
+  // Open de detailweergave (kaart + activiteiten) van één bestemming.
+  function openDestination(idx) {
+    if (!POIS[idx] || POIS[idx].length === 0) return;
+    currentMapStop = idx;
+    const s = TRIP[idx];
+    document.getElementById('detail-title').textContent = `${s.name}`;
+    showTab('detail');
   }
 
   // ---------- Samen plannen / stemmen (Firebase) ----------
@@ -902,7 +920,7 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'p-' + name));
     document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     window.scrollTo({ top: 0 });
-    if (name === 'ontdek' && map) {
+    if (name === 'detail' && map) {
       setTimeout(() => { map.invalidateSize(); selectStop(currentMapStop); }, 60);
     }
     if (name === 'route') {
@@ -923,6 +941,7 @@
     initRouteMap();
     initBoard(state);
     document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+    document.getElementById('detail-back').onclick = () => showTab('route');
   }
 
   // ---------- Toegangscode-gate ----------
