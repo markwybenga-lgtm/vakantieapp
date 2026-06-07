@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v8 (info-links naar websites).
-const CACHE = 'reisgids-v8';
+// Versie opgehoogd naar v9 (tabbladen + onderbalk).
+const CACHE = 'reisgids-v9';
 const SHELL = [
   './',
   './index.html',
