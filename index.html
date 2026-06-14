@@ -87,6 +87,14 @@
     .note-add { margin-top: 8px; }
     .note-input { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: 13px; }
     .note-send { border: none; background: var(--sea); color: #fff; border-radius: 10px; padding: 0 14px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    /* ---------- Foto's-tab ---------- */
+    .fotos-card { background: linear-gradient(150deg, var(--sea) 0%, #245a68 100%); color: #F2F8F8; border-radius: 22px; padding: 30px 24px; text-align: center; box-shadow: var(--shadow); }
+    .fotos-ico { font-size: 42px; }
+    .fotos-t { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; margin-top: 6px; }
+    .fotos-s { font-size: 14px; opacity: 0.92; margin: 8px 0 18px; line-height: 1.5; }
+    .fotos-btn { display: inline-block; background: #fff; color: #245a68; text-decoration: none; font-weight: 700; font-size: 15px; padding: 13px 22px; border-radius: 12px; }
+    .fotos-tip { font-size: 12.5px; color: var(--ink-soft); text-align: center; margin-top: 14px; line-height: 1.5; }
     .shake { animation: shake 0.4s; }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
@@ -284,6 +292,11 @@
     <div class="pill-note" id="wx-note" style="display:block;text-align:center;margin:14px auto 0;">Het weer verschijnt vanzelf zodra een datum binnen ±16 dagen ligt.</div>
     </section><!-- /p-route -->
 
+    <section class="panel" id="p-fotos">
+    <div class="section-h"><h2>Foto's</h2><span>gedeeld album</span></div>
+    <div id="fotos-body"></div>
+    </section><!-- /p-fotos -->
+
     <section class="panel" id="p-reisinfo">
     <div class="section-h"><h2>Reisgegevens</h2><span>KLM · Hertz</span></div>
 
@@ -332,6 +345,7 @@
   <nav class="tabbar" id="tabbar">
     <button data-tab="vandaag" class="active">☀️<span>Vandaag</span></button>
     <button data-tab="route">🧭<span>Route</span></button>
+    <button data-tab="fotos">📷<span>Foto's</span></button>
     <button data-tab="reisinfo">✈️<span>Reisinfo</span></button>
   </nav>
 
@@ -954,6 +968,27 @@
 
   function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
+  // ---------- Foto's-tab (Google Foto's gedeeld album) ----------
+  function renderFotos() {
+    const url = (typeof GOOGLE_PHOTOS_ALBUM_URL !== 'undefined') ? GOOGLE_PHOTOS_ALBUM_URL : '';
+    const body = document.getElementById('fotos-body');
+    if (!body) return;
+    if (url) {
+      body.innerHTML =
+        `<div class="fotos-card">
+           <div class="fotos-ico">📷</div>
+           <div class="fotos-t">Onze reisfoto's</div>
+           <div class="fotos-s">Bekijk en voeg foto's toe in ons gedeelde Google Foto's-album — iedereen met de link kan meedoen.</div>
+           <a class="fotos-btn" href="${url}" target="_blank" rel="noopener">Open in Google Foto's</a>
+         </div>
+         <div class="fotos-tip">Tip: voeg foto's toe vanuit de Google Foto's-app op je telefoon (knop “Toevoegen”). Ze verschijnen dan voor iedereen.</div>`;
+    } else {
+      body.innerHTML =
+        `<div class="board-note"><b>Nog in te stellen.</b> Maak in Google Foto's een gedeeld album, kopieer de deel-link
+         en zet die in <b>config.js</b> bij <b>GOOGLE_PHOTOS_ALBUM_URL</b>. Daarna verschijnt hier de knop naar jullie album. (Zie README, "Foto's".)</div>`;
+    }
+  }
+
   // ---------- Tabbladen ----------
   function showTab(name) {
     document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'p-' + name));
@@ -979,6 +1014,7 @@
     initMap(state);
     initRouteMap();
     initData();
+    renderFotos();
     document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
     document.getElementById('detail-back').onclick = () => showTab('route');
 
