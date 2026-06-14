@@ -112,6 +112,8 @@
     .detail-hero .dh-em { position: absolute; right: 14px; bottom: -8px; font-size: 64px; opacity: 0.5; }
     .detail-hero .dh-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; line-height: 1.05; }
     .detail-hero .dh-dates { font-size: 13px; opacity: 0.92; margin-top: 4px; }
+    .detail-hero .dh-nav { display: inline-block; position: relative; z-index: 1; margin-top: 12px; background: rgba(255,255,255,0.92); color: #2A2018; text-decoration: none; font-weight: 600; font-size: 13px; padding: 8px 14px; border-radius: 999px; }
+    .fl-live { color: var(--sea); text-decoration: none; font-weight: 600; }
 
     /* ---------- Route die zich tekent ---------- */
     .route-draw { stroke-dasharray: 4000; stroke-dashoffset: 4000; animation: draw 2.4s ease forwards; }
@@ -365,7 +367,7 @@
           <div class="arc"><span class="date">vr 24 jul 2026</span><div class="line"></div><span class="fno">KL1605</span></div>
           <div class="ap"><div class="code">FCO</div><div class="time">16:25</div></div>
         </div>
-        <div class="fl-seat">Stoel Mark: <b>19A</b></div>
+        <div class="fl-seat">Stoel Mark: <b>19A</b> · <a class="fl-live" href="https://www.flightradar24.com/data/flights/kl1605" target="_blank" rel="noopener">📡 Live status ↗</a></div>
       </div>
 
       <div class="flight">
@@ -375,7 +377,7 @@
           <div class="arc"><span class="date">do 13 aug 2026</span><div class="line"></div><span class="fno">KL1606</span></div>
           <div class="ap"><div class="code">AMS</div><div class="time">19:50</div></div>
         </div>
-        <div class="fl-seat">Stoel Mark: <b>18A</b></div>
+        <div class="fl-seat">Stoel Mark: <b>18A</b> · <a class="fl-live" href="https://www.flightradar24.com/data/flights/kl1606" target="_blank" rel="noopener">📡 Live status ↗</a></div>
       </div>
     </div>
 
@@ -559,12 +561,13 @@
       card.style.animationDelay = (i * 0.05) + 's';
       const nightsLabel = nights <= 0 ? 'reisdag' : (nights === 1 ? '1 nacht' : nights + ' nachten');
       const infoChip = i < TRIP.length - 1 ? `<a class="chip link" href="${stopInfoUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>` : '';
+      const addrChip = (i < TRIP.length - 1 && (isLodging(s.accom) || s.addr)) ? `<a class="chip link" href="${stopMapsUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 Adres</a>` : '';
       const canOpen = (POIS[i] || []).length > 0;
       if (canOpen) card.classList.add('clickable');
       const chev = canOpen ? ' <span class="chev">›</span>' : '';
       card.innerHTML = `<div class="daycol"><div class="dnum">${start.getDate()}</div><div class="dmon">${MONTHS[start.getMonth()]}</div><div class="arrow">▾</div></div>
         <div class="info"><div class="nm">${s.name}${chev}</div><div class="ac">${s.accom}</div>
-          <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span>${infoChip}</div></div>`;
+          <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span>${addrChip}${infoChip}</div></div>`;
       if (canOpen) card.onclick = () => openDestination(i);
       wrap.appendChild(card);
       if (i < TRIP.length - 1) {
@@ -646,6 +649,7 @@
   function searchUrl(q) { return 'https://www.google.com/search?q=' + encodeURIComponent(q); }
   function poiInfoUrl(p, idx) { return p.url || searchUrl(`${p.n} ${TRIP[idx].name} Italië`); }
   function isLodging(s) { return /agriturismo|masseria|hotel|b&b|camping|resort|villa|casa|sassi/i.test(s || ''); }
+  function stopMapsUrl(s) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.addr || `${s.accom} ${s.name}`); }
   function stopInfoUrl(s) {
     if (s.url) return s.url;
     return searchUrl(isLodging(s.accom) ? `${s.accom} ${s.name}` : `${s.name} Italië`);
@@ -850,6 +854,7 @@
     hero.style.background = v.g;
     hero.innerHTML = `<div class="dh-name">${esc(s.name)}</div>
       <div class="dh-dates">${esc(s.accom)} · ${fmtShort(d(s.start))} – ${fmtShort(d(s.end))}</div>
+      ${(isLodging(s.accom) || s.addr) ? `<a class="dh-nav" href="${stopMapsUrl(s)}" target="_blank" rel="noopener">📍 Adres &amp; route</a>` : ''}
       <span class="dh-em">${v.em}</span>`;
     showTab('detail');
   }
