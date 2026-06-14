@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v18 (echte Claude-planner).
-const CACHE = 'reisgids-v18';
+// Versie opgehoogd naar v19 (gastinlog, opa/oma eruit).
+const CACHE = 'reisgids-v19';
 const SHELL = [
   './',
   './index.html',

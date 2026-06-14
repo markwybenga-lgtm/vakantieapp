@@ -71,6 +71,8 @@
     .who-pick { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
     .who-pick .who { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); padding: 9px 15px; border-radius: 999px; font-family: inherit; font-size: 14px; cursor: pointer; }
     .who-pick .who.me { background: var(--olive); color: #fff; border-color: transparent; font-weight: 600; }
+    .who-pick .who.guest { width: 100%; margin-top: 4px; border-style: dashed; }
+    .heart.static { background: transparent; border: none; color: var(--terra-deep); font-weight: 600; cursor: default; padding: 6px 4px; }
     .poi.lead { border-color: var(--olive); box-shadow: 0 0 0 2px rgba(110,119,64,0.16); background: #FBFAF2; }
     .poi .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .poi-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
@@ -855,6 +857,9 @@
   // ---------- Samen plannen / stemmen (Firebase) ----------
   let db = null, me = null, detailUnsub = null, detailDocs = [], firebaseReady = false;
   let vandaagStop = null, vandaagDocs = [], vandaagWeather = undefined, vandaagTeaser = false, vandaagUnsub = null;
+  const GUEST_NAME = 'Gast';
+  function isGuest() { return me === GUEST_NAME; }
+  function canEdit() { return firebaseReady && !isGuest(); }
 
   const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
@@ -884,7 +889,7 @@
 
   // Een gestemd item aan/uit zetten; maakt zo nodig een doc aan voor een vaste plek.
   function voteItem(it, idx) {
-    if (!firebaseReady || needName()) return;
+    if (!canEdit() || needName()) return;
     if (it.doc) { toggleVote(it.doc.id); return; }
     db.collection('activities').add({
       trip: TRIP_ID, stop: idx, title: it.title, note: it.note || '', cat: it.cat || 'stad',
@@ -898,7 +903,7 @@
   }
 
   function addActivity(title, cat, note, idx) {
-    if (!firebaseReady || needName()) return;
+    if (!canEdit() || needName()) return;
     db.collection('activities').add({
       trip: TRIP_ID, stop: idx, title, note: note || '', cat: cat || 'stad',
       votes: { [me]: true }, addedBy: me, created: firebase.firestore.FieldValue.serverTimestamp()
@@ -906,7 +911,7 @@
   }
 
   function toggleVote(id) {
-    if (needName()) return;
+    if (!canEdit() || needName()) return;
     const it = detailDocs.find(x => x.id === id); if (!it) return;
     const votes = Object.assign({}, it.votes);
     if (votes[me]) delete votes[me]; else votes[me] = true;
@@ -914,6 +919,7 @@
   }
 
   function removeItem(id) {
+    if (!canEdit()) return;
     const it = detailDocs.find(x => x.id === id); if (!it) return;
     if (confirm(`"${it.title}" verwijderen uit de lijst?`)) {
       db.collection('activities').doc(id).delete().catch(() => {});
@@ -930,12 +936,12 @@
     });
   }
   function toggleDone(it, idx) {
-    if (!firebaseReady || needName()) return;
+    if (!canEdit() || needName()) return;
     const nd = !it.done;
     ensureDoc(it, idx).then(ref => ref.update({ done: nd })).catch(() => {});
   }
   function addNote(it, idx, text) {
-    if (!firebaseReady || needName()) return;
+    if (!canEdit() || needName()) return;
     const nt = { by: me, text: text, t: Date.now() };
     ensureDoc(it, idx).then(ref => ref.update({ notes: firebase.firestore.FieldValue.arrayUnion(nt) })).catch(() => {});
   }
@@ -979,14 +985,17 @@
       }
       const routeUrl = it.custom ? searchUrl(`${it.title} ${TRIP[idx].name}`) : mapsLink(it.poi.lat, it.poi.lng, it.poi.n);
       const infoUrl = it.custom ? searchUrl(`${it.title} ${TRIP[idx].name} Italië`) : poiInfoUrl(it.poi, idx);
-      const heart = firebaseReady
-        ? `<button class="heart${mineOn ? ' on' : ''}" data-act="vote" data-i="${n}">${mineOn ? '❤' : '🤍'} <span class="cnt">${cnt}</span></button>` : '';
-      const del = (it.custom && firebaseReady) ? `<button class="del" data-act="del" data-i="${n}" title="verwijderen">✕</button>` : '';
-      const doneBtn = firebaseReady ? `<button class="act done-btn${it.done ? ' on' : ''}" data-act="done" data-i="${n}">${it.done ? '✓ Gedaan' : 'Gedaan?'}</button>` : '';
-      const notesBtn = firebaseReady ? `<button class="act" data-act="notes" data-i="${n}">💬 Verslag${it.notes.length ? ` (${it.notes.length})` : ''}</button>` : '';
-      const notesPanel = firebaseReady ? `<div class="notes">
+      const editable = canEdit();
+      const heart = editable
+        ? `<button class="heart${mineOn ? ' on' : ''}" data-act="vote" data-i="${n}">${mineOn ? '❤' : '🤍'} <span class="cnt">${cnt}</span></button>`
+        : (cnt > 0 ? `<span class="heart static">❤ <span class="cnt">${cnt}</span></span>` : '');
+      const del = (it.custom && editable) ? `<button class="del" data-act="del" data-i="${n}" title="verwijderen">✕</button>` : '';
+      const doneBtn = editable ? `<button class="act done-btn${it.done ? ' on' : ''}" data-act="done" data-i="${n}">${it.done ? '✓ Gedaan' : 'Gedaan?'}</button>` : '';
+      const showNotes = editable || it.notes.length;
+      const notesBtn = showNotes ? `<button class="act" data-act="notes" data-i="${n}">💬 Verslag${it.notes.length ? ` (${it.notes.length})` : ''}</button>` : '';
+      const notesPanel = showNotes ? `<div class="notes">
         ${it.notes.map(nt => `<div class="note"><b>${esc(nt.by)}</b> ${esc(nt.text)}</div>`).join('') || '<div class="note dim">Nog geen verslag — schrijf hoe het was.</div>'}
-        <div class="addrow note-add"><input class="note-input" type="text" placeholder="Hoe was het?" /><button class="note-send" data-act="addnote" data-i="${n}">Plaats</button></div>
+        ${editable ? `<div class="addrow note-add"><input class="note-input" type="text" placeholder="Hoe was het?" /><button class="note-send" data-act="addnote" data-i="${n}">Plaats</button></div>` : ''}
       </div>` : '';
 
       const row = document.createElement('div'); row.className = 'poi' + (lead ? ' lead' : '') + (it.done ? ' done' : '');
@@ -1017,7 +1026,7 @@
       const v = inp.value.trim(); if (v) { addNote(items[+b.dataset.i], idx, v); inp.value = ''; }
     });
 
-    if (firebaseReady) {
+    if (canEdit()) {
       const add = document.createElement('div'); add.className = 'addrow';
       add.innerHTML = `<input id="detail-input" type="text" placeholder="Eigen idee toevoegen…" /><button id="detail-add">Voeg toe</button>`;
       list.appendChild(add);
@@ -1025,7 +1034,11 @@
       const go = () => { const v = inp.value.trim(); if (v) { addActivity(v, 'stad', '', idx); inp.value = ''; } };
       add.querySelector('#detail-add').onclick = go;
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
-    } else {
+    } else if (firebaseReady && isGuest()) {
+      const note = document.createElement('div'); note.className = 'board-note';
+      note.innerHTML = `👀 Je kijkt mee als gast. Stemmen, afvinken en verslagjes zijn voor jou uitgeschakeld.`;
+      list.appendChild(note);
+    } else if (!firebaseReady) {
       const note = document.createElement('div'); note.className = 'board-note';
       note.innerHTML = `Stemmen, afvinken en verslagjes werken zodra de app aan Firebase gekoppeld is (zie README).`;
       list.appendChild(note);
@@ -1094,7 +1107,7 @@
     }
     let pick = pref ? items.find(it => pref.includes(it.cat)) : null;
     if (!pick) pick = items[0];
-    const claudeBtn = (typeof CLAUDE_PLANNER !== 'undefined' && CLAUDE_PLANNER)
+    const claudeBtn = (typeof CLAUDE_PLANNER !== 'undefined' && CLAUDE_PLANNER && !isGuest())
       ? `<button class="ask-claude" id="ask-claude">✨ Vraag Claude om advies</button>` : '';
     box.innerHTML = `<div class="advice"><div class="ah">Advies voor morgen</div><div class="at">${esc(msg)}</div>${pick ? `<div class="pick" id="advice-pick">${(CATS[pick.cat] || {}).em || '📍'} ${esc(pick.title)} →</div>` : ''}${claudeBtn}</div><div id="claude-out"></div>`;
     if (pick) document.getElementById('advice-pick').onclick = () => openDestination(vandaagStop);
@@ -1210,7 +1223,7 @@
   }
 
   // ---------- Login (naam + gezinscode) ----------
-  function storedMe() { const m = lsGet('reisgids-me'); return (m && FAMILY.indexOf(m) > -1) ? m : null; }
+  function storedMe() { const m = lsGet('reisgids-me'); return (m && (FAMILY.indexOf(m) > -1 || m === GUEST_NAME)) ? m : null; }
   function codeOk() { return !ACCESS_CODE || lsGet('reisgids-unlock') === ACCESS_CODE; }
   function appUnlocked() { return !!storedMe() && codeOk(); }
   let booted = false;
@@ -1222,7 +1235,8 @@
     let picked = storedMe();
     const pick = document.getElementById('who-pick');
     function renderPick() {
-      pick.innerHTML = FAMILY.map(n => `<button type="button" class="who${n === picked ? ' me' : ''}" data-n="${n}">${n}</button>`).join('');
+      pick.innerHTML = FAMILY.map(n => `<button type="button" class="who${n === picked ? ' me' : ''}" data-n="${n}">${n}</button>`).join('')
+        + `<button type="button" class="who guest${picked === GUEST_NAME ? ' me' : ''}" data-n="${GUEST_NAME}">👀 Gast — alleen kijken</button>`;
       pick.querySelectorAll('.who').forEach(b => b.onclick = () => { picked = b.dataset.n; renderPick(); });
     }
     renderPick();
