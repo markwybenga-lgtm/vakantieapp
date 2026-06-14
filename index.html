@@ -130,6 +130,12 @@
     body.dark #map, body.dark #routemap { background: #2a241d; }
     body.dark .advice.muted { background: var(--paper-2); }
     .userbar #theme-toggle { background: none; border: none; cursor: pointer; font-size: 15px; padding: 0; }
+    .ask-claude { margin-top: 12px; background: rgba(0,0,0,0.18); color: #fff; border: none; border-radius: 999px; padding: 9px 15px; font-family: inherit; font-size: 13.5px; cursor: pointer; }
+    .ask-claude:disabled { opacity: 0.6; cursor: default; }
+    .claude-box { margin-top: 12px; background: #FCF7EE; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; font-size: 14px; color: var(--ink); line-height: 1.55; white-space: pre-wrap; }
+    .claude-box .cb-h { font-family: 'Fraunces', serif; font-weight: 600; margin-bottom: 6px; color: var(--terra-deep); }
+    .claude-box.err { color: var(--ink-soft); }
+    body.dark .claude-box { background: #221c16; }
     .shake { animation: shake 0.4s; }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
@@ -1088,8 +1094,35 @@
     }
     let pick = pref ? items.find(it => pref.includes(it.cat)) : null;
     if (!pick) pick = items[0];
-    box.innerHTML = `<div class="advice"><div class="ah">Advies voor morgen</div><div class="at">${esc(msg)}</div>${pick ? `<div class="pick" id="advice-pick">${(CATS[pick.cat] || {}).em || '📍'} ${esc(pick.title)} →</div>` : ''}</div>`;
+    const claudeBtn = (typeof CLAUDE_PLANNER !== 'undefined' && CLAUDE_PLANNER)
+      ? `<button class="ask-claude" id="ask-claude">✨ Vraag Claude om advies</button>` : '';
+    box.innerHTML = `<div class="advice"><div class="ah">Advies voor morgen</div><div class="at">${esc(msg)}</div>${pick ? `<div class="pick" id="advice-pick">${(CATS[pick.cat] || {}).em || '📍'} ${esc(pick.title)} →</div>` : ''}${claudeBtn}</div><div id="claude-out"></div>`;
     if (pick) document.getElementById('advice-pick').onclick = () => openDestination(vandaagStop);
+    if (claudeBtn) document.getElementById('ask-claude').onclick = askClaude;
+  }
+
+  async function askClaude() {
+    const out = document.getElementById('claude-out');
+    const btn = document.getElementById('ask-claude');
+    if (!out || vandaagStop == null) return;
+    out.innerHTML = `<div class="claude-box">Claude denkt na…</div>`;
+    if (btn) btn.disabled = true;
+    const stop = TRIP[vandaagStop];
+    const w = vandaagWeather;
+    const activities = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done).slice(0, 8)
+      .map(it => ({ title: it.title, cat: it.cat, votes: it.votes }));
+    try {
+      const res = await fetch('/api/plan', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ place: stop.name, dateLabel: 'morgen', weather: w ? { max: w.max, min: w.min, desc: wxInfo(w.code)[1] } : null, activities })
+      });
+      const data = await res.json();
+      if (data && data.advice) out.innerHTML = `<div class="claude-box"><div class="cb-h">✨ Claude's advies</div>${esc(data.advice)}</div>`;
+      else throw new Error('leeg');
+    } catch (e) {
+      out.innerHTML = `<div class="claude-box err">Het Claude-advies lukte niet. Staan de Vercel-functie en de ANTHROPIC_API_KEY goed ingesteld? (Zie README, "AI-planner".)</div>`;
+    }
+    if (btn) btn.disabled = false;
   }
 
   function renderToday() {
