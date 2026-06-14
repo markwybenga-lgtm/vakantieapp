@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v13 (ingelogde naam bovenaan).
-const CACHE = 'reisgids-v13';
+// Versie opgehoogd naar v14 (kaart inzoombaar + route over de weg; gedaan + verslag).
+const CACHE = 'reisgids-v14';
 const SHELL = [
   './',
   './index.html',

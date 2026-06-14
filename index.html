@@ -73,8 +73,20 @@
     .who-pick .who.me { background: var(--olive); color: #fff; border-color: transparent; font-weight: 600; }
     .poi.lead { border-color: var(--olive); box-shadow: 0 0 0 2px rgba(110,119,64,0.16); background: #FBFAF2; }
     .poi .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-    .poi-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .poi-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
     .voters { font-size: 11.5px; color: var(--olive); margin-top: 4px; }
+    .act { background: none; border: 1px solid var(--line); color: var(--ink-soft); border-radius: 999px; padding: 5px 11px; font-family: inherit; font-size: 12px; cursor: pointer; }
+    .act.done-btn.on { background: rgba(110,119,64,0.15); border-color: transparent; color: #4f5730; font-weight: 600; }
+    .poi.done { opacity: 0.72; }
+    .poi.done .pn { text-decoration: line-through; }
+    .notes { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+    .poi.open-notes .notes { display: block; }
+    .note { font-size: 13px; color: var(--ink); margin-bottom: 6px; line-height: 1.4; }
+    .note b { color: var(--olive); }
+    .note.dim { color: var(--ink-soft); font-style: italic; }
+    .note-add { margin-top: 8px; }
+    .note-input { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: 13px; }
+    .note-send { border: none; background: var(--sea); color: #fff; border-radius: 10px; padding: 0 14px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
     .shake { animation: shake 0.4s; }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
@@ -538,6 +550,7 @@
   let map = null, layer = null, markers = [];
   let driveCache = {}, currentMapStop = 0;
   let routeMap = null;
+  let routeLine = null;
 
   function buildLegend() {
     const used = new Set();
@@ -698,21 +711,31 @@
       document.getElementById('routemap').style.display = 'none';
       return;
     }
-    routeMap = L.map('routemap', {
-      dragging: false, scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false,
-      touchZoom: false, keyboard: false, zoomControl: false
-    });
+    routeMap = L.map('routemap', { scrollWheelZoom: false });
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19, subdomains: 'abcd'
     }).addTo(routeMap);
     const coords = routeCoords();
-    L.polyline(coords, { color: '#C45A38', weight: 3, dashArray: '7 7', opacity: 0.85 }).addTo(routeMap);
+    // voorlopige rechte lijn; wordt vervangen door de route over de weg
+    routeLine = L.polyline(coords, { color: '#C45A38', weight: 3, dashArray: '7 7', opacity: 0.6 }).addTo(routeMap);
     TRIP.forEach((s, i) => {
       L.marker([s.lat, s.lng], { icon: numIcon(i + 1) }).addTo(routeMap)
         .bindPopup(`<b>${i + 1}. ${s.name}</b><br>${fmtShort(d(s.start))}`);
     });
     routeMap.fitBounds(coords, { padding: [34, 34] });
     setTimeout(() => routeMap.invalidateSize(), 200);
+    drawRoadRoute();
+  }
+  async function drawRoadRoute() {
+    try {
+      const str = TRIP.map(s => `${s.lng},${s.lat}`).join(';');
+      const url = `https://router.project-osrm.org/route/v1/driving/${str}?overview=full&geometries=geojson`;
+      const res = await fetch(url); const j = await res.json();
+      if (j.code !== 'Ok' || !j.routes || !j.routes[0]) return;
+      const latlngs = j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+      if (routeLine) routeMap.removeLayer(routeLine);
+      routeLine = L.polyline(latlngs, { color: '#C45A38', weight: 4, opacity: 0.9 }).addTo(routeMap);
+    } catch (e) { /* rechte lijn blijft staan */ }
   }
   function refreshRouteMap() {
     if (!routeMap) return;
@@ -818,6 +841,25 @@
   }
 
   // ---------- Detail-lijst: vaste plekken + eigen ideeën, met stemmen ----------
+  function serverTime() { return firebase.firestore.FieldValue.serverTimestamp(); }
+  function ensureDoc(it, idx) {
+    if (it.doc) return Promise.resolve(db.collection('activities').doc(it.doc.id));
+    return db.collection('activities').add({
+      trip: TRIP_ID, stop: idx, title: it.title, note: it.note || '', cat: it.cat || 'stad',
+      votes: {}, done: false, notes: [], addedBy: me, created: serverTime()
+    });
+  }
+  function toggleDone(it, idx) {
+    if (!firebaseReady || needName()) return;
+    const nd = !it.done;
+    ensureDoc(it, idx).then(ref => ref.update({ done: nd })).catch(() => {});
+  }
+  function addNote(it, idx, text) {
+    if (!firebaseReady || needName()) return;
+    const nt = { by: me, text: text, t: Date.now() };
+    ensureDoc(it, idx).then(ref => ref.update({ notes: firebase.firestore.FieldValue.arrayUnion(nt) })).catch(() => {});
+  }
+
   function renderDetailList(idx) {
     const pois = POIS[idx] || [];
     const drives = driveCache[idx] || null;
@@ -829,24 +871,27 @@
     detailDocs.forEach(dc => { byTitle[(dc.title || '').toLowerCase()] = dc; });
     const poiTitles = new Set(pois.map(p => p.n.toLowerCase()));
 
-    let items = pois.map((p, j) => {
-      const dc = byTitle[p.n.toLowerCase()];
-      return { poi: p, j, doc: dc || null, title: p.n, note: p.note, cat: p.cat,
-        votes: dc ? dc.votes : null, dur: drives ? drives.dur[j] : null, dist: drives ? drives.dist[j] : null, custom: false };
-    });
-    detailDocs.filter(dc => !poiTitles.has((dc.title || '').toLowerCase())).forEach(dc => {
-      items.push({ poi: null, j: -1, doc: dc, title: dc.title, note: dc.note, cat: dc.cat, votes: dc.votes, dur: null, dist: null, custom: true });
+    const mk = (poi, j, dc, custom) => ({
+      poi, j, doc: dc || null, title: custom ? dc.title : poi.n, note: custom ? dc.note : poi.note,
+      cat: custom ? dc.cat : poi.cat, votes: dc ? dc.votes : null,
+      done: dc ? !!dc.done : false,
+      notes: dc && Array.isArray(dc.notes) ? dc.notes.slice().sort((a, b) => (a.t || 0) - (b.t || 0)) : [],
+      dur: (!custom && drives) ? drives.dur[j] : null, dist: (!custom && drives) ? drives.dist[j] : null, custom
     });
 
-    items.sort((a, b) => voteCount(b.votes) - voteCount(a.votes) || ((a.dur ?? 1e9) - (b.dur ?? 1e9)));
-    const top = items.length ? voteCount(items[0].votes) : 0;
+    let items = pois.map((p, j) => mk(p, j, byTitle[p.n.toLowerCase()], false));
+    detailDocs.filter(dc => !poiTitles.has((dc.title || '').toLowerCase())).forEach(dc => items.push(mk(null, -1, dc, true)));
+
+    items.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0)
+      || voteCount(b.votes) - voteCount(a.votes) || ((a.dur ?? 1e9) - (b.dur ?? 1e9)));
+    const top = items.filter(x => !x.done).length ? voteCount(items.find(x => !x.done).votes) : 0;
 
     items.forEach((it, n) => {
       const cat = CATS[it.cat] || { em: '📍', kl: '#8A5A2B' };
       const cnt = voteCount(it.votes);
       const voters = it.votes ? Object.keys(it.votes) : [];
       const mineOn = me && it.votes && it.votes[me];
-      const lead = cnt > 0 && cnt === top;
+      const lead = !it.done && cnt > 0 && cnt === top;
       let driveHtml = '';
       if (!it.custom) {
         if (it.dur != null) driveHtml = `<span class="drive">🚗 ${drives.est ? '~' : ''}${fmtDur(it.dur)}${it.dist != null ? ` · ${it.dist} km` : ''}</span>`;
@@ -857,8 +902,14 @@
       const heart = firebaseReady
         ? `<button class="heart${mineOn ? ' on' : ''}" data-act="vote" data-i="${n}">${mineOn ? '❤' : '🤍'} <span class="cnt">${cnt}</span></button>` : '';
       const del = (it.custom && firebaseReady) ? `<button class="del" data-act="del" data-i="${n}" title="verwijderen">✕</button>` : '';
+      const doneBtn = firebaseReady ? `<button class="act done-btn${it.done ? ' on' : ''}" data-act="done" data-i="${n}">${it.done ? '✓ Gedaan' : 'Gedaan?'}</button>` : '';
+      const notesBtn = firebaseReady ? `<button class="act" data-act="notes" data-i="${n}">💬 Verslag${it.notes.length ? ` (${it.notes.length})` : ''}</button>` : '';
+      const notesPanel = firebaseReady ? `<div class="notes">
+        ${it.notes.map(nt => `<div class="note"><b>${esc(nt.by)}</b> ${esc(nt.text)}</div>`).join('') || '<div class="note dim">Nog geen verslag — schrijf hoe het was.</div>'}
+        <div class="addrow note-add"><input class="note-input" type="text" placeholder="Hoe was het?" /><button class="note-send" data-act="addnote" data-i="${n}">Plaats</button></div>
+      </div>` : '';
 
-      const row = document.createElement('div'); row.className = 'poi' + (lead ? ' lead' : '');
+      const row = document.createElement('div'); row.className = 'poi' + (lead ? ' lead' : '') + (it.done ? ' done' : '');
       row.style.animationDelay = (n * 0.03) + 's';
       row.innerHTML =
         `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
@@ -868,14 +919,23 @@
            <div class="poi-actions">
              <a class="go" href="${routeUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Route</a>
              <a class="go info" href="${infoUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>
-           </div></div>
+             ${doneBtn}${notesBtn}
+           </div>
+           ${notesPanel}</div>
          <div class="right">${heart}${del}</div>`;
-      if (!it.custom) row.onclick = (e) => { if (e.target.closest('a,button')) return; map.setView([it.poi.lat, it.poi.lng], 14); if (markers[it.j]) markers[it.j].openPopup(); document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      if (!it.custom) row.onclick = (e) => { if (e.target.closest('a,button,input,.notes')) return; map.setView([it.poi.lat, it.poi.lng], 14); if (markers[it.j]) markers[it.j].openPopup(); document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
       list.appendChild(row);
     });
 
     list.querySelectorAll('[data-act="vote"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); voteItem(items[+b.dataset.i], idx); });
     list.querySelectorAll('[data-act="del"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const it = items[+b.dataset.i]; if (it.doc) removeItem(it.doc.id); });
+    list.querySelectorAll('[data-act="done"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); toggleDone(items[+b.dataset.i], idx); });
+    list.querySelectorAll('[data-act="notes"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); b.closest('.poi').classList.toggle('open-notes'); });
+    list.querySelectorAll('[data-act="addnote"]').forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const inp = b.closest('.note-add').querySelector('.note-input');
+      const v = inp.value.trim(); if (v) { addNote(items[+b.dataset.i], idx, v); inp.value = ''; }
+    });
 
     if (firebaseReady) {
       const add = document.createElement('div'); add.className = 'addrow';
@@ -887,7 +947,7 @@
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
     } else {
       const note = document.createElement('div'); note.className = 'board-note';
-      note.innerHTML = `Stemmen werkt zodra de app aan Firebase gekoppeld is (zie README).`;
+      note.innerHTML = `Stemmen, afvinken en verslagjes werken zodra de app aan Firebase gekoppeld is (zie README).`;
       list.appendChild(note);
     }
   }
