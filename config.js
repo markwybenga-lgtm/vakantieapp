@@ -15,7 +15,7 @@ const firebaseConfig = {
 };
 
 // 2) De namen van je gezin (verschijnen bij het stemmen).
-const FAMILY = ['Mark', 'Winneke', 'Fedde', 'Jonne'];
+const FAMILY = ['Mark', 'Winneke', 'Fedde', 'Jonne', 'Robert (opa)', 'Antoinette (oma)'];
 
 // 3) Unieke naam voor deze reis (laat staan).
 const TRIP_ID = 'italie2026';
