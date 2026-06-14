@@ -22,3 +22,7 @@ const TRIP_ID = 'italie2026';
 
 // 4) Toegangscode om de app te openen. Pas aan als je een andere wilt; leeg ('') = geen slot.
 const ACCESS_CODE = 'roma2026';
+
+// 5) Link naar jullie gedeelde Google Foto's-album (zie README, "Foto's").
+//    Leeg laten ('') tot je het album hebt gemaakt.
+const https://photos.app.goo.gl/fiEnrjBnLbZNMTKAA = '';
