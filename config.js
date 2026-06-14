@@ -25,4 +25,4 @@ const ACCESS_CODE = 'roma2026';
 
 // 5) Link naar jullie gedeelde Google Foto's-album (zie README, "Foto's").
 //    Leeg laten ('') tot je het album hebt gemaakt.
-const https://photos.app.goo.gl/fiEnrjBnLbZNMTKAA = '';
+const GOOGLE_PHOTOS_ALBUM_URL = 'https://photos.app.goo.gl/fiEnrjBnLbZNMTKAA';
