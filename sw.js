@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v16 (config.js-fix forceren).
-const CACHE = 'reisgids-v16';
+// Versie opgehoogd naar v17 (slim advies, sfeerbanner, donkere modus).
+const CACHE = 'reisgids-v17';
 const SHELL = [
   './',
   './index.html',

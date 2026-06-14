@@ -95,6 +95,41 @@
     .fotos-s { font-size: 14px; opacity: 0.92; margin: 8px 0 18px; line-height: 1.5; }
     .fotos-btn { display: inline-block; background: #fff; color: #245a68; text-decoration: none; font-weight: 700; font-size: 15px; padding: 13px 22px; border-radius: 12px; }
     .fotos-tip { font-size: 12.5px; color: var(--ink-soft); text-align: center; margin-top: 14px; line-height: 1.5; }
+
+    /* ---------- Slim advies (planner) ---------- */
+    #planner { margin-bottom: 4px; }
+    .advice { background: linear-gradient(150deg, var(--olive) 0%, #565c32 100%); color: #F6F4E8; border-radius: 18px; padding: 18px 20px; box-shadow: var(--shadow); }
+    .advice .ah { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.85; }
+    .advice .at { font-family: 'Fraunces', serif; font-size: 19px; line-height: 1.25; margin-top: 6px; }
+    .advice .pick { margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.18); border-radius: 999px; padding: 7px 13px; font-size: 14px; cursor: pointer; }
+    .advice.muted { background: var(--paper-2); color: var(--ink-soft); box-shadow: none; }
+    .advice.muted .at { color: var(--ink); }
+
+    /* ---------- Sfeerbanner per bestemming ---------- */
+    .detail-hero { position: relative; overflow: hidden; border-radius: 18px; padding: 22px 20px; color: #fff; margin: 8px 0 6px; box-shadow: var(--shadow); }
+    .detail-hero .dh-em { position: absolute; right: 14px; bottom: -8px; font-size: 64px; opacity: 0.5; }
+    .detail-hero .dh-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; line-height: 1.05; }
+    .detail-hero .dh-dates { font-size: 13px; opacity: 0.92; margin-top: 4px; }
+
+    /* ---------- Route die zich tekent ---------- */
+    .route-draw { stroke-dasharray: 4000; stroke-dashoffset: 4000; animation: draw 2.4s ease forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    /* ---------- Donkere modus ---------- */
+    body.dark {
+      --paper: #1b1813; --paper-2: #2a241d; --ink: #ECE3D4; --ink-soft: #A99C8A;
+      --line: rgba(236,227,212,0.14); --terra: #D9764F; --terra-deep: #E58A63; --sea: #5AA9BC; --olive: #9AA86A;
+      background: radial-gradient(120% 60% at 50% -10%, #241f19 0%, #1b1813 55%), #1b1813;
+    }
+    body.dark .stop, body.dark .poi, body.dark .infocard, body.dark .lock-card { background: #221c16; }
+    body.dark .stop.now, body.dark .poi.lead { background: #2c251c; }
+    body.dark .stop.clickable:hover, body.dark .poi:hover { background: #2c251c; }
+    body.dark input, body.dark .note-input, body.dark .who, body.dark .heart { background: #2c251c; color: var(--ink); }
+    body.dark .tabbar { background: rgba(20,17,13,0.92); }
+    body.dark .chip.nights { background: var(--paper-2); color: var(--ink); }
+    body.dark #map, body.dark #routemap { background: #2a241d; }
+    body.dark .advice.muted { background: var(--paper-2); }
+    .userbar #theme-toggle { background: none; border: none; cursor: pointer; font-size: 15px; padding: 0; }
     .shake { animation: shake 0.4s; }
     @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
 
@@ -258,6 +293,7 @@
   <div class="wrap">
     <div class="userbar" id="userbar" style="display:none">
       <span>Ingelogd als <b id="userbar-name"></b></span>
+      <button id="theme-toggle" title="dag/nacht">🌙</button>
       <button id="userbar-logout">uitloggen</button>
     </div>
     <section class="panel active" id="p-vandaag">
@@ -275,11 +311,18 @@
       <div class="nextline" id="hero-next"></div>
       <div class="wx" id="hero-wx" style="display:none"></div>
     </section>
+
+    <div class="section-h"><h2>Slim advies</h2><span id="plan-where"></span></div>
+    <div id="planner"></div>
+
+    <div class="section-h" id="today-head" style="display:none"><h2>Op het programma</h2></div>
+    <div id="today-list"></div>
     </section><!-- /p-vandaag -->
 
     <section class="panel" id="p-detail">
     <button class="backbtn" id="detail-back">‹ Terug naar route</button>
-    <div class="section-h"><h2 id="detail-title">Bestemming</h2><span id="poi-count"></span></div>
+    <div class="detail-hero" id="detail-hero"></div>
+    <div class="section-h"><h2>Activiteiten</h2><span id="poi-count"></span></div>
     <div id="map"></div>
     <div class="legend" id="legend"></div>
     <div id="poilist"></div>
@@ -748,7 +791,7 @@
       if (j.code !== 'Ok' || !j.routes || !j.routes[0]) return;
       const latlngs = j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
       if (routeLine) routeMap.removeLayer(routeLine);
-      routeLine = L.polyline(latlngs, { color: '#C45A38', weight: 4, opacity: 0.9 }).addTo(routeMap);
+      routeLine = L.polyline(latlngs, { color: '#C45A38', weight: 4, opacity: 0.9, className: 'route-draw' }).addTo(routeMap);
     } catch (e) { /* rechte lijn blijft staan */ }
   }
   function refreshRouteMap() {
@@ -778,17 +821,34 @@
     setTimeout(() => map.invalidateSize(), 200);
   }
 
+  // Sfeer per bestemming (gradient + emoji), op volgorde van TRIP.
+  const VIBES = [
+    { g: 'linear-gradient(150deg,#B5651D,#8a4a14)', em: '🏛️' },
+    { g: 'linear-gradient(150deg,#2E8B9E,#1f6675)', em: '🌊' },
+    { g: 'linear-gradient(150deg,#7a6a52,#534734)', em: '🪨' },
+    { g: 'linear-gradient(150deg,#2E9BB0,#1f7585)', em: '🐚' },
+    { g: 'linear-gradient(150deg,#1FA6B8,#15808f)', em: '🏖️' },
+    { g: 'linear-gradient(150deg,#3E7C8C,#2b5a66)', em: '⛵' },
+    { g: 'linear-gradient(150deg,#C0492E,#8f3320)', em: '🌋' },
+    { g: 'linear-gradient(150deg,#8A5A2B,#5f3c1c)', em: '🧳' }
+  ];
+
   // Open de detailweergave (kaart + activiteiten) van één bestemming.
   function openDestination(idx) {
     if (!POIS[idx] || POIS[idx].length === 0) return;
     currentMapStop = idx;
-    const s = TRIP[idx];
-    document.getElementById('detail-title').textContent = `${s.name}`;
+    const s = TRIP[idx], v = VIBES[idx] || VIBES[0];
+    const hero = document.getElementById('detail-hero');
+    hero.style.background = v.g;
+    hero.innerHTML = `<div class="dh-name">${esc(s.name)}</div>
+      <div class="dh-dates">${esc(s.accom)} · ${fmtShort(d(s.start))} – ${fmtShort(d(s.end))}</div>
+      <span class="dh-em">${v.em}</span>`;
     showTab('detail');
   }
 
   // ---------- Samen plannen / stemmen (Firebase) ----------
   let db = null, me = null, detailUnsub = null, detailDocs = [], firebaseReady = false;
+  let vandaagStop = null, vandaagDocs = [], vandaagWeather = undefined, vandaagTeaser = false, vandaagUnsub = null;
 
   const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
   const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
@@ -968,6 +1028,88 @@
 
   function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
+  // ---------- Vandaag: slim advies + programma ----------
+  function mergeItems(idx, docs) {
+    const pois = POIS[idx] || [];
+    const byTitle = {}; docs.forEach(dc => { byTitle[(dc.title || '').toLowerCase()] = dc; });
+    const poiTitles = new Set(pois.map(p => p.n.toLowerCase()));
+    let items = pois.map(p => { const dc = byTitle[p.n.toLowerCase()]; return { title: p.n, cat: p.cat, votes: dc ? voteCount(dc.votes) : 0, done: dc ? !!dc.done : false }; });
+    docs.filter(dc => !poiTitles.has((dc.title || '').toLowerCase())).forEach(dc => items.push({ title: dc.title, cat: dc.cat, votes: voteCount(dc.votes), done: !!dc.done }));
+    items.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || b.votes - a.votes);
+    return items;
+  }
+
+  function initVandaag(state) {
+    if (state.phase === 'during') { vandaagStop = state.current; vandaagTeaser = false; }
+    else if (state.phase === 'before') { vandaagStop = 0; vandaagTeaser = true; }
+    else { vandaagStop = null; renderPlanner(); return; }
+
+    if (!vandaagTeaser) {
+      const t = new Date(); t.setDate(t.getDate() + 1);
+      const tomorrow = t.toISOString().slice(0, 10);
+      const s = TRIP[vandaagStop];
+      loadWeather(s.lat, s.lng, tomorrow)
+        .then(w => { vandaagWeather = (w && !w.outOfRange) ? w : null; renderPlanner(); })
+        .catch(() => { vandaagWeather = null; renderPlanner(); });
+    }
+    renderPlanner(); renderToday();
+
+    if (firebaseReady) {
+      if (vandaagUnsub) vandaagUnsub();
+      vandaagUnsub = db.collection('activities').where('trip', '==', TRIP_ID).where('stop', '==', vandaagStop)
+        .onSnapshot(snap => { vandaagDocs = snap.docs.map(dc => ({ id: dc.id, ...dc.data() })); renderPlanner(); renderToday(); }, () => {});
+    }
+  }
+
+  function renderPlanner() {
+    const box = document.getElementById('planner');
+    const where = document.getElementById('plan-where');
+    if (!box) return;
+    if (vandaagStop == null) { box.innerHTML = `<div class="advice muted"><div class="at">De reis zit erop 🇳🇱 — fijn dat jullie er waren!</div></div>`; where.textContent = ''; return; }
+    const stop = TRIP[vandaagStop]; where.textContent = stop.name;
+
+    if (vandaagTeaser) {
+      const dd = dayDiff(d(TRIP[0].start), today());
+      box.innerHTML = `<div class="advice muted"><div class="ah">Binnenkort</div><div class="at">Over ${dd} ${dd === 1 ? 'dag' : 'dagen'} begint de reis in ${esc(stop.name)}. Zodra jullie onderweg zijn, krijg je hier elke ochtend een weer-advies voor de volgende dag.</div></div>`;
+      return;
+    }
+    if (vandaagWeather === undefined) { box.innerHTML = `<div class="advice muted"><div class="at">Advies laden…</div></div>`; return; }
+
+    const items = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done);
+    let pref = null, msg;
+    const w = vandaagWeather;
+    if (!w) { msg = 'Geen weersverwachting beschikbaar — kies gerust je favoriet uit de lijst.'; }
+    else {
+      const rain = [51,53,55,61,63,65,80,81,82,95,96,99].includes(w.code);
+      const hot = w.max >= 32;
+      if (rain) { pref = ['grot','cultuur','stad']; msg = `Morgen kans op buien (${w.max}°). Mooie dag voor binnen: een grot, een stad of iets cultureels.`; }
+      else if (hot) { pref = ['strand','grot','natuur']; msg = `Morgen wordt het heet (${w.max}°). Kies verkoeling: het strand, een grot of schaduwrijke natuur.`; }
+      else { pref = ['strand','uitzicht','stad','natuur','cultuur']; msg = `Morgen ${w.max}°, ${wxInfo(w.code)[1]} — prima dag voor van alles.`; }
+    }
+    let pick = pref ? items.find(it => pref.includes(it.cat)) : null;
+    if (!pick) pick = items[0];
+    box.innerHTML = `<div class="advice"><div class="ah">Advies voor morgen</div><div class="at">${esc(msg)}</div>${pick ? `<div class="pick" id="advice-pick">${(CATS[pick.cat] || {}).em || '📍'} ${esc(pick.title)} →</div>` : ''}</div>`;
+    if (pick) document.getElementById('advice-pick').onclick = () => openDestination(vandaagStop);
+  }
+
+  function renderToday() {
+    const head = document.getElementById('today-head');
+    const list = document.getElementById('today-list');
+    if (!list || vandaagStop == null) { if (head) head.style.display = 'none'; if (list) list.innerHTML = ''; return; }
+    const items = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done).slice(0, 5);
+    head.querySelector('h2').textContent = vandaagTeaser ? 'Alvast kiezen' : 'Op het programma';
+    head.style.display = items.length ? 'flex' : 'none';
+    list.innerHTML = items.map(it =>
+      `<div class="poi"><div class="badge" style="--c:${(CATS[it.cat] || {}).kl || '#8A5A2B'}">${(CATS[it.cat] || {}).em || '📍'}</div>
+        <div><div class="pn">${esc(it.title)}</div>${it.votes ? `<div class="voters">❤ ${it.votes}</div>` : ''}</div>
+        <div class="right"><span class="chev">›</span></div></div>`).join('');
+    list.querySelectorAll('.poi').forEach(r => r.onclick = () => openDestination(vandaagStop));
+  }
+
+  // ---------- Thema (dag/nacht) ----------
+  function updateThemeBtn() { const b = document.getElementById('theme-toggle'); if (b) b.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙'; }
+  function applyTheme() { if (lsGet('reisgids-theme') === 'dark') document.body.classList.add('dark'); updateThemeBtn(); }
+
   // ---------- Foto's-tab (Google Foto's gedeeld album) ----------
   function renderFotos() {
     const url = (typeof GOOGLE_PHOTOS_ALBUM_URL !== 'undefined') ? GOOGLE_PHOTOS_ALBUM_URL : '';
@@ -1015,6 +1157,12 @@
     initRouteMap();
     initData();
     renderFotos();
+    initVandaag(state);
+    document.getElementById('theme-toggle').onclick = () => {
+      document.body.classList.toggle('dark');
+      lsSet('reisgids-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      updateThemeBtn();
+    };
     document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
     document.getElementById('detail-back').onclick = () => showTab('route');
 
@@ -1033,7 +1181,7 @@
   function codeOk() { return !ACCESS_CODE || lsGet('reisgids-unlock') === ACCESS_CODE; }
   function appUnlocked() { return !!storedMe() && codeOk(); }
   let booted = false;
-  function boot() { if (booted) return; booted = true; init(); }
+  function boot() { if (booted) return; booted = true; applyTheme(); init(); }
   function gate() {
     const lock = document.getElementById('lock');
     if (appUnlocked()) { me = storedMe(); lock.classList.add('hide'); boot(); return; }
