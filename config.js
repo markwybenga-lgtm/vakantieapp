@@ -26,3 +26,7 @@ const ACCESS_CODE = 'roma2026';
 // 5) Link naar jullie gedeelde Google Foto's-album (zie README, "Foto's").
 //    Leeg laten ('') tot je het album hebt gemaakt.
 const GOOGLE_PHOTOS_ALBUM_URL = 'https://photos.app.goo.gl/fiEnrjBnLbZNMTKAA';
+
+// 6) Zet op true zodra je de Claude-planner hebt opgezet (zie README, "AI-planner").
+const CLAUDE_PLANNER = true;
+ 
