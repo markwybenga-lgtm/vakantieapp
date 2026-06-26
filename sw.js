@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v20 (adreslinks slaapadressen + live vluchtstatus).
-const CACHE = 'reisgids-v20';
+// Versie opgehoogd naar v21 (reisgids-content: plekken, restaurants en tips per stop).
+const CACHE = 'reisgids-v21';
 const SHELL = [
   './',
   './index.html',

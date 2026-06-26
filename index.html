@@ -114,6 +114,14 @@
     .detail-hero .dh-dates { font-size: 13px; opacity: 0.92; margin-top: 4px; }
     .detail-hero .dh-nav { display: inline-block; position: relative; z-index: 1; margin-top: 12px; background: rgba(255,255,255,0.92); color: #2A2018; text-decoration: none; font-weight: 600; font-size: 13px; padding: 8px 14px; border-radius: 999px; }
     .fl-live { color: var(--sea); text-decoration: none; font-weight: 600; }
+    #detail-tips { margin: 0 0 4px; }
+    .tips { background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px; padding: 4px 14px; margin-bottom: 14px; }
+    .tips summary { cursor: pointer; font-weight: 700; font-size: 14px; padding: 10px 0; color: var(--ink); list-style: none; }
+    .tips summary::-webkit-details-marker { display: none; }
+    .tips summary::after { content: '⌄'; float: right; opacity: 0.5; font-size: 16px; }
+    .tips[open] summary::after { content: '⌃'; }
+    .tips ul { margin: 0 0 12px; padding-left: 18px; }
+    .tips li { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 8px; }
 
     /* ---------- Route die zich tekent ---------- */
     .route-draw { stroke-dasharray: 4000; stroke-dashoffset: 4000; animation: draw 2.4s ease forwards; }
@@ -332,6 +340,7 @@
     <section class="panel" id="p-detail">
     <button class="backbtn" id="detail-back">‹ Terug naar route</button>
     <div class="detail-hero" id="detail-hero"></div>
+    <div id="detail-tips"></div>
     <div class="section-h"><h2>Activiteiten</h2><span id="poi-count"></span></div>
     <div id="map"></div>
     <div class="legend" id="legend"></div>
@@ -431,7 +440,7 @@
   //  cat: strand | stad | cultuur | grot | uitzicht | natuur | eten
   // ----------------------------------------------------------------------
   const POIS = [
-    [ // Rome
+    [ // 0 Rome
       { n: 'Colosseum', cat: 'cultuur', lat: 41.8902, lng: 12.4922, note: 'Het iconische amfitheater — tickets vooraf om de rij te skippen.' },
       { n: 'Vaticaan & Sint-Pieter', cat: 'cultuur', lat: 41.9022, lng: 12.4539, note: 'Basiliek en musea; ga vroeg, het wordt warm en druk.' },
       { n: 'Trevifontein', cat: 'uitzicht', lat: 41.9009, lng: 12.4833, note: 'Muntje gooien verplicht — vroeg in de ochtend het rustigst.' },
@@ -440,47 +449,119 @@
       { n: 'Villa Borghese', cat: 'natuur', lat: 41.9145, lng: 12.4923, note: 'Groot stadspark — schaduw en ruimte voor de kinderen.' },
       { n: 'Trastevere', cat: 'eten', lat: 41.8896, lng: 12.4695, note: 'Sfeervolle wijk voor het avondeten.' }
     ],
-    [ // Mattinata / Gargano
-      { n: 'Vieste & Pizzomunno', cat: 'stad', lat: 41.8824, lng: 16.1758, note: 'Wit havenstadje met de beroemde rotspunt op het strand.' },
-      { n: 'Strand Vignanotica', cat: 'strand', lat: 41.8430, lng: 16.1830, note: 'Kiezelstrand tussen witte kliffen — adembenemend.' },
-      { n: 'Foresta Umbra', cat: 'natuur', lat: 41.8200, lng: 16.0700, note: 'Koel beukenbos — ideaal uitje op een snikhete dag.' },
-      { n: 'Monte Sant\'Angelo', cat: 'cultuur', lat: 41.7077, lng: 15.9558, note: 'UNESCO-heiligdom hoog op de berg, prachtig uitzicht.' },
-      { n: 'Boottocht zeegrotten', cat: 'grot', lat: 41.8824, lng: 16.1758, note: 'Vanuit Vieste langs de grotten en bogen van de kust.' },
-      { n: 'Peschici', cat: 'uitzicht', lat: 41.9460, lng: 16.0150, note: 'Wit dorpje op een klif boven zee.' }
+    [ // 1 Mattinata / Gargano (gids dag 1-4)
+      { n: 'Monte Saraceno & Necropoli', cat: 'uitzicht', lat: 41.7000, lng: 16.0750, note: 'Uitzicht over kust en olijfvelden + honderden oude Daunische graven. Vrij toegankelijk, ~30 min. Stevige schoenen: rotsachtig.' },
+      { n: 'Foresta Umbra — Sentiero del Laghetto', cat: 'natuur', lat: 41.8200, lng: 16.0700, note: 'Koel beukenbos, wandeling ~4,5 km / 1 u langs een meertje met schildpadden. Ideaal op een hete dag; fijn voor een picknick.' },
+      { n: 'Vieste — centro storico & Cattedrale', cat: 'stad', lat: 41.8824, lng: 16.1758, note: 'Wit stadje, smalle steegjes, doorkijkjes naar zee. Parkeer aan de rand (€1/u of €5 totaal) en loop het centrum in.' },
+      { n: 'Pizzomunno & Spiaggia del Castello', cat: 'strand', lat: 41.8790, lng: 16.1800, note: 'De beroemde hoge witte kalkrots aan het strand van Vieste — even uitwaaien.' },
+      { n: 'Monte Sant\'Angelo — Santuario San Michele', cat: 'cultuur', lat: 41.7080, lng: 15.9560, note: 'UNESCO-pelgrimsoord: je daalt via een trap af in de grot. Basiliek gratis; museum/crypte €5. Goede schoenen, treden kunnen glad zijn.' },
+      { n: 'Monte Sant\'Angelo — kasteel & Rione Junno', cat: 'uitzicht', lat: 41.7060, lng: 15.9550, note: 'Normandisch-Zwabisch kasteel met uitzicht over de Gargano, plus de oudste witte wijk van het dorp.' },
+      { n: 'Peschici — centro & Castello', cat: 'uitzicht', lat: 41.9460, lng: 16.0150, note: 'Wit dorp hoog op de rots. Rij het centrum niet in; parkeer aan de rand (blauwe zone ~€1/u).' },
+      { n: 'Baia di Peschici', cat: 'strand', lat: 41.9400, lng: 16.0200, note: 'Breed zandstrand met helder water, direct onder het dorp. Ligbedden te huur bij de lido\'s.' },
+      { n: 'Il Capriccio Dietro L\'Angolo', cat: 'eten', lat: 41.7110, lng: 16.0520, note: 'Aanrader in het centrum van Mattinata, op loopafstand van Agriturismo Giorgio.' },
+      { n: 'Osteria Vecchia Vieste', cat: 'eten', lat: 41.8820, lng: 16.1750, note: 'Top adres voor het diner in de oude kern van Vieste.' },
+      { n: 'Al Trabucco da Mimì (Peschici)', cat: 'eten', lat: 41.9350, lng: 16.0050, note: 'Diner op een historische houten visconstructie boven zee — magisch bij zonsondergang. Reserveren is vaak een must!' }
     ],
-    [ // Matera
-      { n: 'Sassi di Matera', cat: 'cultuur', lat: 40.6664, lng: 16.6107, note: 'De grotwoningen — loop ze rond zonsondergang voor goud licht.' },
-      { n: 'Casa Grotta', cat: 'cultuur', lat: 40.6650, lng: 16.6110, note: 'Ingerichte grotwoning die laat zien hoe men hier leefde.' },
-      { n: 'Belvedere Murgia Timone', cat: 'uitzicht', lat: 40.6700, lng: 16.6210, note: 'Uitkijkpunt aan de overkant — de mooiste foto van de Sassi.' }
+    [ // 2 Matera (gids dag 5-6: Trani, Matera, Altamura & Gravina)
+      { n: 'Cattedrale di San Nicola Pellegrino (Trani)', cat: 'cultuur', lat: 41.2820, lng: 16.4180, note: 'Romaanse kathedraal pal aan zee — één van de mooiste plekken van Puglia. Meestal ~09:00-12:30 en 15:30-19:00; toegang doorgaans gratis.' },
+      { n: 'Castello Svevo di Trani', cat: 'cultuur', lat: 41.2830, lng: 16.4200, note: 'Middeleeuws kasteel aan zee van Frederik II. Klein, kort bezoek. Entree €8.' },
+      { n: 'Sassi di Matera', cat: 'cultuur', lat: 40.6664, lng: 16.6107, note: 'De beroemde grotwijken. Loop Sasso Barisano (netter) en Sasso Caveoso (rauwer). Goud licht rond zonsondergang.' },
+      { n: 'Palombaro Lungo', cat: 'cultuur', lat: 40.6670, lng: 16.6100, note: 'Enorm ondergronds waterreservoir onder Piazza Vittorio Veneto. Entree €3 p.p.' },
+      { n: 'Casa Grotta di Vico Solitario', cat: 'cultuur', lat: 40.6640, lng: 16.6120, note: 'Ingerichte grotwoning die laat zien hoe men hier tot de jaren \'60 leefde. Entree €5 p.p.' },
+      { n: 'Santa Maria de Idris', cat: 'cultuur', lat: 40.6645, lng: 16.6130, note: 'Spectaculaire rotskerk; vanaf het terras kijk je uit over heel Sasso Caveoso. Entree €4 p.p.' },
+      { n: 'Belvedere di Murgia Timone', cat: 'uitzicht', lat: 40.6690, lng: 16.6210, note: 'Het mooiste uitzicht op de Sassi, aan de overkant van de kloof. Via de hangbrug (voelt wiebelig, maar veilig) of met de auto.' },
+      { n: 'Altamura — Panificio Santa Caterina', cat: 'eten', lat: 40.8270, lng: 16.5530, note: 'Oudste bakkerij van Altamura, met de lekkerste focaccia. Rij kan lang zijn, maar het is het waard.' },
+      { n: 'Gravina — Ponte Acquedotto', cat: 'uitzicht', lat: 40.8180, lng: 16.4150, note: 'Aquaduct-brug over de diepe kloof; steek over voor het mooiste uitzicht terug op de stad. Goede schoenen.' },
+      { n: 'Gravina Sotterranea', cat: 'grot', lat: 40.8190, lng: 16.4160, note: 'Ondergronds labyrint van cisternen, graanschuren en rotskerken. Rondleiding €15 p.p., reserveren aangeraden. Ideaal als het buiten te warm is.' },
+      { n: 'MàniMa (Trani)', cat: 'eten', lat: 41.2810, lng: 16.4170, note: 'Visgerechten op een rustige plek vlak bij de haven van Trani.' },
+      { n: 'Trattoria del Caveoso (Matera)', cat: 'eten', lat: 40.6640, lng: 16.6125, note: 'Sfeervol diner in de Sasso Caveoso.' }
     ],
-    [ // Giurdignano / Otranto
-      { n: 'Otranto', cat: 'stad', lat: 40.1469, lng: 18.4877, note: 'Oostelijkste stadje van Italië; kathedraal met groot mozaïek.' },
-      { n: 'Baia dei Turchi', cat: 'strand', lat: 40.1750, lng: 18.4500, note: 'Helder water, deels schaduw van pijnbomen.' },
-      { n: 'Grotta della Poesia', cat: 'strand', lat: 40.2880, lng: 18.4280, note: 'Natuurlijk zwemgat in de rotsen — bijzonder om in te springen.' },
-      { n: 'Grotta Zinzulusa', cat: 'grot', lat: 40.0050, lng: 18.4270, note: 'Indrukwekkende zeegrot bij Castro.' },
-      { n: 'Menhirs van Giurdignano', cat: 'cultuur', lat: 40.1500, lng: 18.3500, note: 'Het "megalietendorp" — staande stenen vlak bij je verblijf.' }
+    [ // 3 Giurdignano / Otranto (gids dag 7-8: Lecce & Otranto)
+      { n: 'Lecce — Basilica di Santa Croce', cat: 'cultuur', lat: 40.3525, lng: 18.1750, note: 'Hét hoogtepunt van de Lecce-barok: een gevel vol beelden en fantasiefiguren uit lokale pietra leccese.' },
+      { n: 'Lecce — Piazza del Duomo', cat: 'stad', lat: 40.3510, lng: 18.1700, note: 'Het mooiste plein van de stad, helemaal ingesloten door kathedraal, klokkentoren en bisschoppelijk paleis.' },
+      { n: 'Lecce — Piazza Sant\'Oronzo', cat: 'stad', lat: 40.3520, lng: 18.1730, note: 'Levendig plein met een Romeins amfitheater. Proef een warme rustico leccese op een terras.' },
+      { n: 'Pasticceria Natale (Lecce)', cat: 'eten', lat: 40.3535, lng: 18.1740, note: 'Begin als de locals met een pasticciotto — warm taartje met romige vulling, de trots van Lecce.' },
+      { n: 'Grotta della Poesia', cat: 'strand', lat: 40.2830, lng: 18.4270, note: 'Natuurlijk rond zwemgat in de rotsen met turquoise water. Zwemmen mag niet meer, maar het uitzicht is bijzonder. Entree €3 p.p.' },
+      { n: 'Cava di Bauxite', cat: 'uitzicht', lat: 40.1370, lng: 18.4800, note: 'Voormalige bauxietmijn even buiten Otranto: roodoranje aarde en felgroen water. Doe geen witte schoenen/kleren aan — de aarde geeft af.' },
+      { n: 'Otranto — Castello Aragonese', cat: 'cultuur', lat: 40.1460, lng: 18.4910, note: 'Imposant fort met dikke muren en ronde torens; mooi uitzicht over haven en kustlijn. Entree €12 p.p.' },
+      { n: 'Otranto — Kathedraal & mozaïekvloer', cat: 'cultuur', lat: 40.1470, lng: 18.4890, note: '12e-eeuwse mozaïekvloer met de Levensboom; achter het altaar de relieken van de Martelaren van Otranto (1480).' },
+      { n: 'Otranto — Molo San Nicola', cat: 'uitzicht', lat: 40.1480, lng: 18.4900, note: 'Wandeling langs de stadsmuren en de pier; vooral mooi bij zonsondergang als de vissersboten terugkeren.' },
+      { n: 'Menhirs van Giurdignano', cat: 'cultuur', lat: 40.1500, lng: 18.3500, note: 'Het "megalietendorp" met staande stenen, vlak bij je verblijf — een ander, prehistorisch Puglia.' },
+      { n: 'Osteria Da Angiulino (Lecce)', cat: 'eten', lat: 40.3510, lng: 18.1715, note: 'Favoriete lunch- én dinerplek in Lecce (ook Moro en Dall\'antiquario zijn aanraders).' },
+      { n: 'LaltroBaffo (Otranto)', cat: 'eten', lat: 40.1465, lng: 18.4905, note: 'Terras in Otranto, wat prijziger maar goed. Sluit af met een glas wijn bij Cala dei Normanni.' }
     ],
-    [ // Alliste / Gallipoli
+    [ // 4 Alliste / Salento (gids dag 9-12: Leuca, Gallipoli, Specchia, Nardò)
+      { n: 'Boottocht met Rocco — Santa Maria di Leuca', cat: 'boot', lat: 39.7930, lng: 18.3710, note: 'Geplande activiteit! ~3 u langs de rotskust en zeegrotten (Grotta del Soffio, della Vora, delle Mannute...). Onderweg vaak gelegenheid om te zwemmen.' },
+      { n: 'Santa Maria di Leuca — Punta Meliso', cat: 'uitzicht', lat: 39.7945, lng: 18.3580, note: 'De zuidpunt van Puglia waar de Adriatische en Ionische Zee samenkomen, met vuurtoren.' },
+      { n: 'Gallipoli — oude stad & Castello', cat: 'stad', lat: 40.0556, lng: 17.9920, note: 'Vissersstadje op een eilandje met het Castello Angioino-Aragonese. Parkeer gratis net buiten het centrum (niet in de blauwe lijnen).' },
+      { n: 'Spiaggia della Purità (Gallipoli)', cat: 'strand', lat: 40.0560, lng: 17.9710, note: 'Stadsstrand direct onder het oude centrum — een duik in helderblauw water.' },
+      { n: 'Frantoi Ipogei (Gallipoli)', cat: 'cultuur', lat: 40.0555, lng: 17.9700, note: 'Ondergrondse olijfoliemolens die laten zien hoe de olie vroeger in het donker werd geperst.' },
+      { n: 'Specchia — centro storico', cat: 'stad', lat: 39.9390, lng: 18.3050, note: 'Authentiek, rustig wit dorp met Palazzo Risolo. Let op: ZTL-zone, parkeer aan de rand (bv. Via Giacomo Matteotti).' },
+      { n: 'Nardò — Piazza Salandra', cat: 'stad', lat: 40.1790, lng: 18.0330, note: 'Prachtig barok plein. De oude stad ligt volledig in een camera-bewaakte ZTL — parkeer aan de rand (bv. Via XXV Luglio).' },
+      { n: 'Porto Selvaggio', cat: 'natuur', lat: 40.1670, lng: 17.9270, note: 'Natuurreservaat: 15-20 min door dennenbos (of shuttle €2,50 p.p.) naar een rotsachtige baai met helder water. Waterschoenen mee. Parkeren ~€5/dag.' },
       { n: 'Pescoluse — Maldive del Salento', cat: 'strand', lat: 39.8230, lng: 18.2980, note: 'Wit zand en ondiep helder water — top met kinderen.' },
-      { n: 'Gallipoli oude stad', cat: 'stad', lat: 40.0556, lng: 17.9920, note: 'Vissersstadje op een eilandje, leuke straatjes en stranden.' },
-      { n: 'Santa Maria di Leuca', cat: 'uitzicht', lat: 39.7960, lng: 18.3580, note: 'Zuidpunt waar twee zeeën samenkomen; vuurtoren.' },
-      { n: 'Porto Selvaggio', cat: 'natuur', lat: 40.1670, lng: 17.9270, note: 'Natuurreservaat met pijnbossen en rotskust.' }
+      { n: 'Lido Onda Marina', cat: 'strand', lat: 39.9000, lng: 18.0500, note: 'Goed en betaalbaar strand in de buurt van je verblijf.' },
+      { n: 'La Puritate (Gallipoli)', cat: 'eten', lat: 40.0555, lng: 17.9690, note: 'Lunch met uitzicht over zee aan de stadsmuren: verse orecchiette of een zeevruchtensalade.' },
+      { n: 'Caffè Parisi (Nardò)', cat: 'eten', lat: 40.1790, lng: 18.0335, note: 'Espresso of cappuccino met een pasticciotto op het terras aan Piazza Salandra.' },
+      { n: 'Clantò / Antico Monastero (Felline)', cat: 'eten', lat: 39.9400, lng: 18.1000, note: 'Leuke restaurantjes vlak bij Masseria Cisternella.' }
     ],
-    [ // Monopoli / Valle d'Itria
-      { n: 'Polignano a Mare', cat: 'uitzicht', lat: 40.9960, lng: 17.2180, note: 'Stadje op de kliffen met het beroemde strandje Lama Monachile.' },
-      { n: 'Alberobello', cat: 'cultuur', lat: 40.7830, lng: 17.2410, note: 'Sprookjesachtige trulli-huisjes (UNESCO).' },
+    [ // 5 Monopoli / Valle d'Itria (gids dag 13-16: Ostuni, Monopoli, Polignano, Bari, trulli)
+      { n: 'Ostuni — la città bianca', cat: 'stad', lat: 40.7300, lng: 17.5770, note: 'De witte stad op een heuvel: doolhof van trappen en gekalkte muren, Cattedrale, de Arco di Scoppa en het fotoplekje Via Brancasi.' },
+      { n: 'Monopoli — Porto Antico', cat: 'stad', lat: 40.9510, lng: 17.3010, note: 'Oude haven met de karakteristieke blauwe gozzi-bootjes; mooie binnenstad. Parkeer gratis, ~15 min lopen.' },
+      { n: 'Castello Carlo V & Cala Porta Vecchia', cat: 'strand', lat: 40.9530, lng: 17.3000, note: 'Spaans kasteel aan zee + het stadsstrandje Cala Porta Vecchia voor een korte duik.' },
+      { n: 'Polignano a Mare — Lama Monachile', cat: 'uitzicht', lat: 40.9960, lng: 17.2180, note: 'Beroemd kiezelstrandje tussen de kliffen. Kom vroeg, het vult zich snel. Het stadje hangt spectaculair boven zee.' },
+      { n: 'Grotta Palazzese (Polignano)', cat: 'uitzicht', lat: 40.9940, lng: 17.2240, note: 'Bezoek het voor het spectaculaire uitzicht, maar eet er niet (duur en tegenvallend). Leuk alternatief: Grotta Ardito op het dak.' },
+      { n: 'Alberobello — trulli', cat: 'cultuur', lat: 40.7830, lng: 17.2370, note: 'UNESCO trulli-stad. Ga vroeg, vóór de drukte. Rione Monti voor de foto\'s, Aia Piccola voor het echte dorpsleven. Trullo Sovrano €2,50.' },
+      { n: 'Locorotondo', cat: 'uitzicht', lat: 40.7550, lng: 17.3270, note: 'Witte "ronde" stad op een heuvel met puntdaken (cummerse). Sluit af met een glas Locorotondo DOC.' },
+      { n: 'Cisternino', cat: 'stad', lat: 40.7430, lng: 17.4260, note: 'Wit dorp in de Valle d\'Itria. Beleef de fornelli pronti: kies bombette (vleesrolletjes) en laat ze ter plekke grillen.' },
       { n: 'Grotte di Castellana', cat: 'grot', lat: 40.8810, lng: 17.1480, note: 'Spectaculaire druipsteengrotten — heerlijk koel op hete dagen.' },
-      { n: 'Ostuni', cat: 'stad', lat: 40.7290, lng: 17.5770, note: 'De "witte stad" op een heuvel.' },
-      { n: 'Monopoli oude haven', cat: 'strand', lat: 40.9510, lng: 17.3010, note: 'Mooie oude binnenstad met stadsstrandjes.' }
+      { n: 'Bari Vecchia & Basilica di San Nicola', cat: 'cultuur', lat: 41.1300, lng: 16.8690, note: 'Oud hart van Bari: de Via delle Orecchiette waar vrouwen pasta draaien, en de basiliek waar Sint-Nicolaas (onze Sinterklaas) ligt. Proef focaccia barese.' },
+      { n: 'La Locanda dei Mercanti (Monopoli)', cat: 'eten', lat: 40.9512, lng: 17.3012, note: 'Verse pasta met zeevruchten in Monopoli (ook The King Street Food is een favoriet).' },
+      { n: 'Trattoria Fave e Fogghje (Ostuni)', cat: 'eten', lat: 40.7305, lng: 17.5765, note: 'Orecchiette met cime di rapa en burrata — pure smaken uit Puglia.' },
+      { n: 'Il Super Mago del Gelo (Polignano)', cat: 'eten', lat: 40.9960, lng: 17.2210, note: 'Sluit de dag af met een caffè speciale: koffie, amandellikeur, citroenrasp en slagroom. Uniek voor Polignano.' }
     ],
-    [ // Napels
+    [ // 6 Napels
       { n: 'Pompeii', cat: 'cultuur', lat: 40.7497, lng: 14.4869, note: 'De stad die de Vesuvius bedolf — neem water en petjes mee.' },
       { n: 'Vesuvius', cat: 'natuur', lat: 40.8210, lng: 14.4260, note: 'Wandel naar de krater; uitzicht over de baai.' },
       { n: 'Napels — centro storico', cat: 'eten', lat: 40.8500, lng: 14.2600, note: 'Bakermat van de pizza — proef een echte Margherita.' },
       { n: 'Herculaneum', cat: 'cultuur', lat: 40.8060, lng: 14.3480, note: 'Beter bewaard en compacter dan Pompeii.' },
       { n: 'Sorrento & kust', cat: 'uitzicht', lat: 40.6260, lng: 14.3760, note: 'Mooie kuststad als opstap naar de Amalfikust.' }
     ],
-    [] // Rome → Amsterdam (reisdag, geen plekken)
+    [] // 7 Rome -> Amsterdam (reisdag, geen plekken)
+  ];
+
+  // ----------------------------------------------------------------------
+  //  GOED OM TE WETEN per stop (praktische tips uit de reisgids).
+  // ----------------------------------------------------------------------
+  const TIPS = [
+    [], // 0 Rome
+    [ // 1 Mattinata / Gargano
+      '⚠️ ZTL: rij de oude centra van Vieste en Peschici niet in (boetes). Parkeer aan de rand en loop het laatste stuk.',
+      '🅿️ Vieste: parkeren aan de rand kan voor €1 per uur of €5 totaal.',
+      '🍽️ Al Trabucco da Mimì (Peschici): reserveren is vaak een must, zeker rond zonsondergang.'
+    ],
+    [ // 2 Matera
+      '🅿️ Matera: Parkeergarage Damasco ligt het dichtst bij je hotel en heeft shuttleservice. ~€25/dag, uiterlijk 13:00 verlaten. WhatsApp: +39 389 192 4077.',
+      '⚠️ ZTL Matera: de garage ligt in een ZTL-zone. Je mag er de hele dag naartoe rijden, behalve tussen 20:30 en 00:00.',
+      '🎟️ Gravina Sotterranea: rondleiding €15 p.p. — reserveren aangeraden. Ideaal als het buiten te warm is.'
+    ],
+    [ // 3 Giurdignano / Otranto
+      '⚠️ ZTL: Lecce en Otranto hebben autoluwe zones; parkeer buiten het centrum en loop.',
+      '🍰 Lecce: begin de dag zoals de locals met een pasticciotto (Pasticceria Natale of Caffè Alvino).',
+      '👕 Cava di Bauxite: doe geen witte schoenen of kleren aan — de rode aarde geeft snel af.'
+    ],
+    [ // 4 Alliste / Salento
+      '⛵ Boottocht met Rocco: 14:00 uur bij Porto Turistico Santa Maria di Leuca – Molo I. Wees 20-30 min vooraf aanwezig. Meenemen: water, zwemkleding, handdoek, zonnebrand en waterschoenen.',
+      '⚠️ ZTL: Nardò en Specchia hebben camera-bewaakte zones; parkeer aan de rand.',
+      '🅿️ Porto Selvaggio: parkeer bij de pineta (~€5/dag), dan 15-20 min lopen of de shuttle (€2,50 p.p.).'
+    ],
+    [ // 5 Monopoli / Valle d'Itria
+      '🅿️ Ostuni: parkeren is van 15 jun–15 sep betaald van 9:00–02:00 (€0,80/u; 21:00–02:00 €1,70/u).',
+      '⏰ Alberobello: ga vroeg in de ochtend, vóór de drukte losbarst.',
+      '🍦 Polignano: bezoek Grotta Palazzese wél voor het uitzicht, maar eet er niet (duur/tegenvallend) — alternatief Grotta Ardito.'
+    ],
+    [], // 6 Napels
+    []  // 7 reisdag
   ];
 
   const CATS = {
@@ -490,7 +571,8 @@
     grot:     { em: '🕳️', kl: '#5B6770', label: 'grot' },
     uitzicht: { em: '🌅', kl: '#C98A2B', label: 'uitzicht' },
     natuur:   { em: '🌳', kl: '#5E7D3A', label: 'natuur' },
-    eten:     { em: '🍝', kl: '#B0432E', label: 'eten' }
+    eten:     { em: '🍝', kl: '#B0432E', label: 'eten' },
+    boot:     { em: '⛵', kl: '#2E7D9E', label: 'boottocht' }
   };
 
   // ---------- Datum-helpers (Nederlands) ----------
@@ -856,7 +938,19 @@
       <div class="dh-dates">${esc(s.accom)} · ${fmtShort(d(s.start))} – ${fmtShort(d(s.end))}</div>
       ${(isLodging(s.accom) || s.addr) ? `<a class="dh-nav" href="${stopMapsUrl(s)}" target="_blank" rel="noopener">📍 Adres &amp; route</a>` : ''}
       <span class="dh-em">${v.em}</span>`;
+    renderTips(idx);
     showTab('detail');
+  }
+
+  // Praktische tips ("Goed om te weten") per bestemming.
+  function renderTips(idx) {
+    const box = document.getElementById('detail-tips'); if (!box) return;
+    const tips = (typeof TIPS !== 'undefined' && TIPS[idx]) ? TIPS[idx] : [];
+    if (!tips.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<details class="tips" open>
+      <summary>ℹ️ Goed om te weten</summary>
+      <ul>${tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+    </details>`;
   }
 
   // ---------- Samen plannen / stemmen (Firebase) ----------
