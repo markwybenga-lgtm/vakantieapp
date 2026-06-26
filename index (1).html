@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Reisgids Italië 2026</title>
+  <meta name="theme-color" content="#C45A38" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Reisgids" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,500&family=Spline+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet (gratis kaarten, geen sleutel nodig) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <style>
+    :root {
+      --paper: #F4EBDD; --paper-2: #EADFCB; --ink: #2A2018; --ink-soft: #6B5D4E;
+      --terra: #C45A38; --terra-deep: #A8421F; --olive: #6E7740; --sea: #2E6E7E;
+      --gold: #E0A02E; --line: rgba(42,32,24,0.14); --shadow: 0 18px 40px -22px rgba(42,32,24,0.55);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Spline Sans', system-ui, sans-serif; color: var(--ink);
+      background: radial-gradient(120% 60% at 50% -10%, #F8F1E5 0%, var(--paper) 55%), var(--paper);
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+      padding: env(safe-area-inset-top) 0 calc(env(safe-area-inset-bottom) + 84px);
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.4;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+    .wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 0 20px; }
+
+    /* ---------- Tabbladen + onderbalk (stap 5c) ---------- */
+    .panel { display: none; }
+    .panel.active { display: block; animation: fadeIn 0.25s ease; }
+    .userbar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 2px 0; font-size: 12.5px; color: var(--ink-soft); }
+    .userbar b { color: var(--ink); }
+    .userbar b::before { content: '👤 '; font-weight: 400; }
+    .userbar button { background: none; border: none; color: var(--sea); font-family: inherit; font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 500; display: flex;
+      background: rgba(252,247,238,0.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+      border-top: 1px solid var(--line); padding: 6px 4px calc(env(safe-area-inset-bottom) + 6px); }
+    .tabbar button { flex: 1; background: none; border: none; font-family: inherit; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 19px; color: var(--ink-soft); padding: 4px 0; }
+    .tabbar button span { font-size: 10.5px; letter-spacing: 0.01em; font-weight: 500; }
+    .tabbar button.active { color: var(--terra-deep); }
+    .tabbar button.active span { font-weight: 700; }
+
+    /* ---------- Toegangscode ---------- */
+    .lock { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px;
+      background: linear-gradient(160deg, var(--terra) 0%, var(--terra-deep) 100%); }
+    .lock.hide { display: none; }
+    .lock-card { background: #FCF7EE; border-radius: 22px; padding: 34px 26px 28px; width: 100%; max-width: 330px; text-align: center; box-shadow: var(--shadow); }
+    .lock-ico { font-size: 40px; }
+    .lock-t { font-family: 'Fraunces', serif; font-weight: 800; font-size: 30px; margin-top: 6px; letter-spacing: -0.01em; }
+    .lock-s { font-size: 13.5px; color: var(--ink-soft); margin: 6px 0 18px; line-height: 1.5; }
+    .lock-card input { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 13px 14px; font-family: inherit; font-size: 16px; color: var(--ink); text-align: center; letter-spacing: 0.05em; }
+    .lock-card input:focus { outline: none; border-color: var(--terra); }
+    .lock-card button { width: 100%; margin-top: 10px; border: none; background: var(--terra); color: #fff; border-radius: 12px; padding: 13px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .lock-card button:active { transform: scale(0.99); }
+    .lock-err { color: var(--terra-deep); font-size: 13px; min-height: 18px; margin-top: 10px; font-weight: 600; }
+    .who-pick { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
+    .who-pick .who { border: 1px solid var(--line); background: #fff; color: var(--ink-soft); padding: 9px 15px; border-radius: 999px; font-family: inherit; font-size: 14px; cursor: pointer; }
+    .who-pick .who.me { background: var(--olive); color: #fff; border-color: transparent; font-weight: 600; }
+    .who-pick .who.guest { width: 100%; margin-top: 4px; border-style: dashed; }
+    .heart.static { background: transparent; border: none; color: var(--terra-deep); font-weight: 600; cursor: default; padding: 6px 4px; }
+    .poi.lead { border-color: var(--olive); box-shadow: 0 0 0 2px rgba(110,119,64,0.16); background: #FBFAF2; }
+    .poi .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .poi-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+    .voters { font-size: 11.5px; color: var(--olive); margin-top: 4px; }
+    .act { background: none; border: 1px solid var(--line); color: var(--ink-soft); border-radius: 999px; padding: 5px 11px; font-family: inherit; font-size: 12px; cursor: pointer; }
+    .act.done-btn.on { background: rgba(110,119,64,0.15); border-color: transparent; color: #4f5730; font-weight: 600; }
+    .poi.done { opacity: 0.72; }
+    .poi.done .pn { text-decoration: line-through; }
+    .notes { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+    .poi.open-notes .notes { display: block; }
+    .note { font-size: 13px; color: var(--ink); margin-bottom: 6px; line-height: 1.4; }
+    .note b { color: var(--olive); }
+    .note.dim { color: var(--ink-soft); font-style: italic; }
+    .note-add { margin-top: 8px; }
+    .note-input { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 11px; font-family: inherit; font-size: 13px; }
+    .note-send { border: none; background: var(--sea); color: #fff; border-radius: 10px; padding: 0 14px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    /* ---------- Foto's-tab ---------- */
+    .fotos-card { background: linear-gradient(150deg, var(--sea) 0%, #245a68 100%); color: #F2F8F8; border-radius: 22px; padding: 30px 24px; text-align: center; box-shadow: var(--shadow); }
+    .fotos-ico { font-size: 42px; }
+    .fotos-t { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; margin-top: 6px; }
+    .fotos-s { font-size: 14px; opacity: 0.92; margin: 8px 0 18px; line-height: 1.5; }
+    .fotos-btn { display: inline-block; background: #fff; color: #245a68; text-decoration: none; font-weight: 700; font-size: 15px; padding: 13px 22px; border-radius: 12px; }
+    .fotos-tip { font-size: 12.5px; color: var(--ink-soft); text-align: center; margin-top: 14px; line-height: 1.5; }
+
+    /* ---------- Slim advies (planner) ---------- */
+    #planner { margin-bottom: 4px; }
+    .advice { background: linear-gradient(150deg, var(--olive) 0%, #565c32 100%); color: #F6F4E8; border-radius: 18px; padding: 18px 20px; box-shadow: var(--shadow); }
+    .advice .ah { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.85; }
+    .advice .at { font-family: 'Fraunces', serif; font-size: 19px; line-height: 1.25; margin-top: 6px; }
+    .advice .pick { margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.18); border-radius: 999px; padding: 7px 13px; font-size: 14px; cursor: pointer; }
+    .advice.muted { background: var(--paper-2); color: var(--ink-soft); box-shadow: none; }
+    .advice.muted .at { color: var(--ink); }
+
+    /* ---------- Sfeerbanner per bestemming ---------- */
+    .detail-hero { position: relative; overflow: hidden; border-radius: 18px; padding: 22px 20px; color: #fff; margin: 8px 0 6px; box-shadow: var(--shadow); }
+    .detail-hero .dh-em { position: absolute; right: 14px; bottom: -8px; font-size: 64px; opacity: 0.5; }
+    .detail-hero .dh-name { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; line-height: 1.05; }
+    .detail-hero .dh-dates { font-size: 13px; opacity: 0.92; margin-top: 4px; }
+    .detail-hero .dh-nav { display: inline-block; position: relative; z-index: 1; margin-top: 12px; background: rgba(255,255,255,0.92); color: #2A2018; text-decoration: none; font-weight: 600; font-size: 13px; padding: 8px 14px; border-radius: 999px; }
+    .fl-live { color: var(--sea); text-decoration: none; font-weight: 600; }
+    #detail-tips { margin: 0 0 4px; }
+    .tips { background: var(--paper-2); border: 1px solid var(--line); border-radius: 14px; padding: 4px 14px; margin-bottom: 14px; }
+    .tips summary { cursor: pointer; font-weight: 700; font-size: 14px; padding: 10px 0; color: var(--ink); list-style: none; }
+    .tips summary::-webkit-details-marker { display: none; }
+    .tips summary::after { content: '⌄'; float: right; opacity: 0.5; font-size: 16px; }
+    .tips[open] summary::after { content: '⌃'; }
+    .tips ul { margin: 0 0 12px; padding-left: 18px; }
+    .tips li { font-size: 13px; line-height: 1.5; color: var(--ink-soft); margin-bottom: 8px; }
+
+    /* ---------- Route die zich tekent ---------- */
+    .route-draw { stroke-dasharray: 4000; stroke-dashoffset: 4000; animation: draw 2.4s ease forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    /* ---------- Donkere modus ---------- */
+    body.dark {
+      --paper: #1b1813; --paper-2: #2a241d; --ink: #ECE3D4; --ink-soft: #A99C8A;
+      --line: rgba(236,227,212,0.14); --terra: #D9764F; --terra-deep: #E58A63; --sea: #5AA9BC; --olive: #9AA86A;
+      background: radial-gradient(120% 60% at 50% -10%, #241f19 0%, #1b1813 55%), #1b1813;
+    }
+    body.dark .stop, body.dark .poi, body.dark .infocard, body.dark .lock-card { background: #221c16; }
+    body.dark .stop.now, body.dark .poi.lead { background: #2c251c; }
+    body.dark .stop.clickable:hover, body.dark .poi:hover { background: #2c251c; }
+    body.dark input, body.dark .note-input, body.dark .who, body.dark .heart { background: #2c251c; color: var(--ink); }
+    body.dark .tabbar { background: rgba(20,17,13,0.92); }
+    body.dark .chip.nights { background: var(--paper-2); color: var(--ink); }
+    body.dark #map, body.dark #routemap { background: #2a241d; }
+    body.dark .advice.muted { background: var(--paper-2); }
+    .userbar #theme-toggle { background: none; border: none; cursor: pointer; font-size: 15px; padding: 0; }
+    .ask-claude { margin-top: 12px; background: rgba(0,0,0,0.18); color: #fff; border: none; border-radius: 999px; padding: 9px 15px; font-family: inherit; font-size: 13.5px; cursor: pointer; }
+    .ask-claude:disabled { opacity: 0.6; cursor: default; }
+    .claude-box { margin-top: 12px; background: #FCF7EE; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; font-size: 14px; color: var(--ink); line-height: 1.55; white-space: pre-wrap; }
+    .claude-box .cb-h { font-family: 'Fraunces', serif; font-weight: 600; margin-bottom: 6px; color: var(--terra-deep); }
+    .claude-box.err { color: var(--ink-soft); }
+    body.dark .claude-box { background: #221c16; }
+    .shake { animation: shake 0.4s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-7px)} 40%,80%{transform:translateX(7px)} }
+
+    header { padding: 34px 0 18px; }
+    .kicker { font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase; color: var(--terra-deep); font-weight: 600; }
+    .title { font-family: 'Fraunces', serif; font-weight: 800; font-size: clamp(54px, 18vw, 88px); line-height: 0.92; letter-spacing: -0.02em; margin: 6px 0 4px; }
+    .title em { font-style: italic; font-weight: 500; color: var(--terra); }
+    .route { font-size: 14px; color: var(--ink-soft); border-top: 1.5px solid var(--line); padding-top: 12px; margin-top: 10px; }
+
+    .hero { position: relative; overflow: hidden; background: linear-gradient(150deg, var(--terra) 0%, var(--terra-deep) 100%); color: #FBF3E7; border-radius: 22px; padding: 24px 22px 22px; box-shadow: var(--shadow); margin-top: 8px; }
+    .hero::after { content: ""; position: absolute; right: -40px; top: -40px; width: 150px; height: 150px; background: radial-gradient(circle, var(--gold) 0%, rgba(224,160,46,0) 70%); opacity: 0.55; }
+    .hero .label { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; opacity: 0.8; }
+    .hero .big { font-family: 'Fraunces', serif; font-weight: 600; font-size: 30px; line-height: 1.05; margin: 8px 0 4px; }
+    .hero .sub { font-size: 14px; opacity: 0.92; }
+    .hero .countbar { display: flex; gap: 18px; margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.22); }
+    .stat .num { font-family: 'Fraunces', serif; font-weight: 700; font-size: 30px; line-height: 1; }
+    .stat .cap { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.78; margin-top: 4px; }
+    .hero .nextline { margin-top: 16px; font-size: 13.5px; opacity: 0.95; display: flex; align-items: center; gap: 8px; }
+    .hero .nextline b { font-weight: 600; }
+    .hero .wx { margin-top: 14px; display: inline-flex; align-items: center; gap: 9px; background: rgba(0,0,0,0.16); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; }
+    .hero .wx .em { font-size: 17px; }
+
+    .section-h { display: flex; align-items: baseline; justify-content: space-between; margin: 34px 4px 14px; }
+    .section-h h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; }
+    .section-h span { font-size: 12px; color: var(--ink-soft); letter-spacing: 0.04em; }
+
+    .stop { position: relative; display: grid; grid-template-columns: 56px 1fr; gap: 14px; background: #FCF7EE; border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 16px 14px; margin-bottom: 12px; opacity: 0; transform: translateY(10px); animation: rise 0.5s cubic-bezier(.2,.7,.2,1) forwards; }
+    @keyframes rise { to { opacity: 1; transform: none; } }
+    .stop.now { border-color: var(--terra); box-shadow: 0 0 0 2px rgba(196,90,56,0.18); background: #FFF9F0; }
+    .stop.past { opacity: 0.55; }
+    .stop.clickable { cursor: pointer; }
+    .stop.clickable:hover { border-color: var(--terra); transform: translateY(-1px); box-shadow: 0 10px 22px -16px rgba(42,32,24,0.5); }
+    .stop.clickable .nm { color: var(--terra-deep); }
+    .stop .chev { color: var(--terra); font-weight: 700; margin-left: 2px; }
+    .backbtn { background: none; border: none; color: var(--sea); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 16px 0 0; }
+    .backbtn:hover { text-decoration: underline; }
+    .daycol { text-align: center; padding-top: 2px; }
+    .daycol .dnum { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; line-height: 0.9; color: var(--terra-deep); }
+    .daycol .dmon { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); margin-top: 3px; }
+    .daycol .arrow { color: var(--line); font-size: 14px; margin-top: 8px; }
+    .info .nm { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; line-height: 1.15; }
+    .info .ac { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+    .info .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+    .chip { font-size: 12px; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); white-space: nowrap; }
+    .chip.nights { background: var(--paper-2); border-color: transparent; color: var(--ink); }
+    .chip.wx { display: inline-flex; align-items: center; gap: 6px; }
+    .chip.wx .em { font-size: 14px; }
+    .chip.wx.warm { border-color: rgba(196,90,56,0.4); color: var(--terra-deep); }
+    .chip.now-tag { background: var(--terra); color: #fff; border-color: transparent; font-weight: 600; }
+    .chip.loading { color: #b3a796; }
+
+    /* ---------- Kaart + bezienswaardigheden (stap 3) ---------- */
+    #map { height: 320px; border-radius: 18px; border: 1px solid var(--line); box-shadow: var(--shadow); background: #dfe7e3; z-index: 1; }
+    #routemap { height: 280px; border-radius: 18px; border: 1px solid var(--line); box-shadow: var(--shadow); background: #dfe7e3; z-index: 1; margin-top: 22px; }
+    .numpin { width: 26px; height: 26px; border-radius: 50%; background: var(--terra); color: #fff; border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .leaflet-container { font-family: 'Spline Sans', sans-serif; }
+    .pin { width: 30px; height: 30px; background: var(--c, var(--terra)); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 7px rgba(0,0,0,0.35); border: 2px solid #fff; }
+    .pin span { transform: rotate(45deg); font-size: 14px; line-height: 1; }
+    .pin.home { background: var(--terra-deep); width: 34px; height: 34px; }
+
+    .stopbar { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .stopbar::-webkit-scrollbar { display: none; }
+    .tab { flex: 0 0 auto; border: 1px solid var(--line); background: #FCF7EE; color: var(--ink-soft); padding: 8px 14px; border-radius: 999px; font-size: 13.5px; font-family: inherit; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+    .tab.active { background: var(--terra); color: #fff; border-color: transparent; font-weight: 600; }
+
+    .poi { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: center; background: #FCF7EE; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; cursor: pointer; transition: background 0.15s, transform 0.15s; }
+    .poi:hover, .poi:active { background: #FFF9F0; transform: translateY(-1px); }
+    .poi .badge { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--c, var(--paper-2)); color: #fff; }
+    .poi .pn { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; line-height: 1.15; }
+    .poi .pc { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+    .poi .go { flex: 0 0 auto; font-size: 12px; color: var(--terra-deep); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 6px 11px; white-space: nowrap; }
+    .poi .go:hover { background: var(--paper-2); }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 2px 18px; font-size: 12px; color: var(--ink-soft); }
+    .legend i { font-style: normal; }
+
+    /* ---------- Reisafstanden / rijtijden (stap 5) ---------- */
+    .leg { font-size: 12px; color: var(--sea); margin: -6px 0 12px 27px; padding: 5px 0 5px 16px; border-left: 2px dashed var(--line); }
+    .poi-meta { margin-top: 7px; }
+    .drive { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--sea); background: rgba(46,110,126,0.08); padding: 3px 9px; border-radius: 999px; }
+    .drive.dim { color: #b3a796; background: transparent; }
+    .poi-divider { display: flex; align-items: center; gap: 10px; margin: 6px 2px 12px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+    .poi-divider span { flex: 1; height: 1px; background: var(--line); }
+    .poi-links { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+    .go.info { color: var(--sea); }
+    .go.info:hover { background: rgba(46,110,126,0.10); }
+    .chip.link { color: var(--sea); border-color: rgba(46,110,126,0.35); text-decoration: none; cursor: pointer; }
+    .chip.link:hover { background: rgba(46,110,126,0.10); }
+
+    /* ---------- Samen plannen / stemmen (stap 4) ---------- */
+    .whoami { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 2px 14px; }
+    .whoami .lbl { font-size: 13px; color: var(--ink-soft); margin-right: 2px; }
+    .who { border: 1px solid var(--line); background: #FCF7EE; color: var(--ink-soft); padding: 7px 13px; border-radius: 999px; font-family: inherit; font-size: 13.5px; cursor: pointer; transition: all .15s; }
+    .who.me { background: var(--olive); color: #fff; border-color: transparent; font-weight: 600; }
+
+    .vote { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: center; background: #FCF7EE; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; animation: rise .4s cubic-bezier(.2,.7,.2,1) both; }
+    .vote.lead { border-color: var(--olive); box-shadow: 0 0 0 2px rgba(110,119,64,.16); background: #FBFAF2; }
+    .vote .badge { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: var(--c, var(--paper-2)); color: #fff; }
+    .vote .vn { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; line-height: 1.15; }
+    .vote .vc { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+    .vote .voters { font-size: 11.5px; color: var(--olive); margin-top: 4px; min-height: 14px; }
+    .vote .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .heart { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 7px 12px; font-family: inherit; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; white-space: nowrap; }
+    .heart.on { background: #FBE3D6; border-color: var(--terra); color: var(--terra-deep); font-weight: 600; }
+    .heart .cnt { font-weight: 700; }
+    .del { background: none; border: none; color: #c3b6a4; font-size: 16px; cursor: pointer; line-height: 1; padding: 2px 4px; }
+    .del:hover { color: var(--terra); }
+
+    .addrow { display: flex; gap: 8px; margin: 6px 0 10px; }
+    .addrow input { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 12px; padding: 11px 13px; font-family: inherit; font-size: 14px; color: var(--ink); }
+    .addrow input:focus { outline: none; border-color: var(--terra); }
+    .addrow button { border: none; background: var(--terra); color: #fff; border-radius: 12px; padding: 0 16px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .suggs { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 6px; }
+    .sugg { border: 1px dashed var(--line); background: transparent; color: var(--ink-soft); border-radius: 999px; padding: 6px 11px; font-family: inherit; font-size: 12.5px; cursor: pointer; }
+    .sugg:hover { border-style: solid; border-color: var(--terra); color: var(--terra-deep); }
+    .board-note { background: var(--paper-2); border-radius: 14px; padding: 16px 18px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.55; }
+    .board-note b { color: var(--ink); }
+    .empty { text-align: center; color: var(--ink-soft); font-size: 13.5px; padding: 14px 0 4px; }
+
+    /* ---------- Reisgegevens (vlucht + auto) ---------- */
+    .infocard { background: #FCF7EE; border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 14px; margin-bottom: 12px; }
+    .ic-head { display: flex; align-items: center; gap: 12px; }
+    .ic-ico { width: 40px; height: 40px; border-radius: 12px; background: var(--terra); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .ic-t { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; }
+    .ic-s { font-size: 12.5px; color: var(--ink-soft); margin-top: 1px; }
+    .ic-s b { color: var(--ink); letter-spacing: 0.06em; }
+    .pax { font-size: 12.5px; color: var(--ink-soft); margin: 12px 0 4px; padding: 9px 12px; background: var(--paper-2); border-radius: 10px; line-height: 1.5; }
+    .flight { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+    .fl-tag { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--terra-deep); font-weight: 600; }
+    .fl-route { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin-top: 6px; }
+    .ap { text-align: center; }
+    .ap .code { font-family: 'Fraunces', serif; font-weight: 700; font-size: 24px; line-height: 1; }
+    .ap .time { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+    .arc { text-align: center; color: var(--ink-soft); }
+    .arc .line { border-top: 1.5px dashed var(--line); position: relative; margin: 6px 4px; }
+    .arc .line::after { content: '✈'; position: absolute; right: -2px; top: -9px; font-size: 13px; color: var(--terra); }
+    .arc .fno { font-size: 11.5px; letter-spacing: 0.04em; }
+    .arc .date { font-size: 11.5px; display: block; margin-bottom: 2px; }
+    .fl-seat { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; text-align: center; }
+    .fl-seat b { color: var(--ink); }
+    .cardrow { font-size: 13.5px; color: var(--ink); margin-top: 12px; line-height: 1.5; }
+    .ok { display: inline-block; background: rgba(110,119,64,0.16); color: #4f5730; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.04em; }
+
+    footer { margin-top: 30px; text-align: center; font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; }
+    footer .install { margin-top: 8px; }
+    .pill-note { display: inline-block; background: var(--paper-2); padding: 8px 14px; border-radius: 999px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div id="lock" class="lock">
+    <div class="lock-card">
+      <div class="lock-ico">🌅</div>
+      <div class="lock-t">Bella Italia</div>
+      <div class="lock-s">Kies wie je bent en vul de gezinscode in.</div>
+      <div class="who-pick" id="who-pick"></div>
+      <input id="lock-input" type="password" inputmode="text" autocomplete="off" placeholder="Gezinscode" />
+      <button id="lock-btn">Inloggen</button>
+      <div class="lock-err" id="lock-err"></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="userbar" id="userbar" style="display:none">
+      <span>Ingelogd als <b id="userbar-name"></b></span>
+      <button id="theme-toggle" title="dag/nacht">🌙</button>
+      <button id="userbar-logout">uitloggen</button>
+    </div>
+    <section class="panel active" id="p-vandaag">
+    <header>
+      <div class="kicker">Zomer 2026 · Familiereis</div>
+      <h1 class="title">Bella <em>Italia</em></h1>
+      <div class="route">Rome → Gargano → Matera → Salento → Monopoli → Napels → terug</div>
+    </header>
+
+    <section class="hero" id="hero">
+      <div class="label">Vandaag</div>
+      <div class="big" id="hero-big">Laden…</div>
+      <div class="sub" id="hero-sub"></div>
+      <div class="countbar" id="hero-countbar"></div>
+      <div class="nextline" id="hero-next"></div>
+      <div class="wx" id="hero-wx" style="display:none"></div>
+    </section>
+
+    <div class="section-h"><h2>Slim advies</h2><span id="plan-where"></span></div>
+    <div id="planner"></div>
+
+    <div class="section-h" id="today-head" style="display:none"><h2>Op het programma</h2></div>
+    <div id="today-list"></div>
+    </section><!-- /p-vandaag -->
+
+    <section class="panel" id="p-detail">
+    <button class="backbtn" id="detail-back">‹ Terug naar route</button>
+    <div class="detail-hero" id="detail-hero"></div>
+    <div id="detail-tips"></div>
+    <div class="section-h"><h2>Activiteiten</h2><span id="poi-count"></span></div>
+    <div id="map"></div>
+    <div class="legend" id="legend"></div>
+    <div id="poilist"></div>
+    </section><!-- /p-detail -->
+
+    <section class="panel" id="p-route">
+    <div id="routemap"></div>
+    <div class="section-h"><h2>De route</h2><span id="trip-range"></span></div>
+    <div id="stops"></div>
+    <div class="pill-note" id="wx-note" style="display:block;text-align:center;margin:14px auto 0;">Het weer verschijnt vanzelf zodra een datum binnen ±16 dagen ligt.</div>
+    </section><!-- /p-route -->
+
+    <section class="panel" id="p-fotos">
+    <div class="section-h"><h2>Foto's</h2><span>gedeeld album</span></div>
+    <div id="fotos-body"></div>
+    </section><!-- /p-fotos -->
+
+    <section class="panel" id="p-reisinfo">
+    <div class="section-h"><h2>Reisgegevens</h2><span>KLM · Hertz</span></div>
+
+    <div class="infocard">
+      <div class="ic-head">
+        <span class="ic-ico">✈️</span>
+        <div><div class="ic-t">Vluchten</div><div class="ic-s">Boekingscode <b>XDCXTC</b></div></div>
+      </div>
+      <div class="pax">Mark Wybenga · Winneke Bongaerts · Fedde Wybenga · Jonne Wybenga</div>
+
+      <div class="flight">
+        <div class="fl-tag">Heenvlucht</div>
+        <div class="fl-route">
+          <div class="ap"><div class="code">AMS</div><div class="time">14:15</div></div>
+          <div class="arc"><span class="date">vr 24 jul 2026</span><div class="line"></div><span class="fno">KL1605</span></div>
+          <div class="ap"><div class="code">FCO</div><div class="time">16:25</div></div>
+        </div>
+        <div class="fl-seat">Stoel Mark: <b>19A</b> · <a class="fl-live" href="https://www.flightradar24.com/data/flights/kl1605" target="_blank" rel="noopener">📡 Live status ↗</a></div>
+      </div>
+
+      <div class="flight">
+        <div class="fl-tag">Terugvlucht</div>
+        <div class="fl-route">
+          <div class="ap"><div class="code">FCO</div><div class="time">17:25</div></div>
+          <div class="arc"><span class="date">do 13 aug 2026</span><div class="line"></div><span class="fno">KL1606</span></div>
+          <div class="ap"><div class="code">AMS</div><div class="time">19:50</div></div>
+        </div>
+        <div class="fl-seat">Stoel Mark: <b>18A</b> · <a class="fl-live" href="https://www.flightradar24.com/data/flights/kl1606" target="_blank" rel="noopener">📡 Live status ↗</a></div>
+      </div>
+    </div>
+
+    <div class="infocard">
+      <div class="ic-head">
+        <span class="ic-ico">🚗</span>
+        <div><div class="ic-t">Huurauto</div><div class="ic-s">Hertz <span class="ok">bevestigd</span></div></div>
+      </div>
+      <div class="cardrow">📍 Ophalen &amp; inleveren: Luchthaven Rome Fiumicino (FCO)</div>
+    </div>
+
+    <footer>
+      <div class="install">Tip: open het menu van je browser en kies “Toevoegen aan startscherm” om er een echte app van te maken.</div>
+    </footer>
+    </section><!-- /p-reisinfo -->
+  </div>
+
+  <nav class="tabbar" id="tabbar">
+    <button data-tab="vandaag" class="active">☀️<span>Vandaag</span></button>
+    <button data-tab="route">🧭<span>Route</span></button>
+    <button data-tab="fotos">📷<span>Foto's</span></button>
+    <button data-tab="reisinfo">✈️<span>Reisinfo</span></button>
+  </nav>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Persoonlijke instellingen (sleutels, namen, code) — apart bestand -->
+  <script src="config.js"></script>
+  <!-- Firebase (gratis) — voor de gedeelde lijstjes & stemmen -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+  // Instellingen (firebaseConfig, FAMILY, TRIP_ID, ACCESS_CODE) komen uit config.js.
+
+  // ----------------------------------------------------------------------
+  //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
+  // ----------------------------------------------------------------------
+  const TRIP = [
+    { name: 'Rome',                 accom: 'Aankomst & stad',         start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
+    { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
+    { name: 'Matera',               accom: '5 Elementi Sassi',        start: '2026-07-30', end: '2026-07-31', lat: 40.6664, lng: 16.6043 },
+    { name: 'Giurdignano',          accom: 'Agriturismo Il Megalite', start: '2026-07-31', end: '2026-08-03', lat: 40.1486, lng: 18.3486 },
+    { name: 'Alliste (Salento)',    accom: 'Masseria Cisternella',    start: '2026-08-03', end: '2026-08-07', lat: 39.9447, lng: 18.0847 },
+    { name: 'Monopoli',             accom: 'Masseria Santa Teresa',   start: '2026-08-07', end: '2026-08-11', lat: 40.9543, lng: 17.2967 },
+    { name: 'Napels (omgeving)',    accom: 'Twee dagen in de buurt',  start: '2026-08-11', end: '2026-08-13', lat: 40.8518, lng: 14.2681 },
+    { name: 'Rome → Amsterdam',     accom: 'Terugreis & vlucht',      start: '2026-08-13', end: '2026-08-13', lat: 41.9028, lng: 12.4964 }
+  ];
+
+  // ----------------------------------------------------------------------
+  //  BEZIENSWAARDIGHEDEN per stop (zelfde volgorde als TRIP).
+  //  cat: strand | stad | cultuur | grot | uitzicht | natuur | eten
+  // ----------------------------------------------------------------------
+  const POIS = [
+    [ // 0 Rome
+      { n: 'Colosseum', cat: 'cultuur', lat: 41.8902, lng: 12.4922, note: 'Het iconische amfitheater — tickets vooraf om de rij te skippen.' },
+      { n: 'Vaticaan & Sint-Pieter', cat: 'cultuur', lat: 41.9022, lng: 12.4539, note: 'Basiliek en musea; ga vroeg, het wordt warm en druk.' },
+      { n: 'Trevifontein', cat: 'uitzicht', lat: 41.9009, lng: 12.4833, note: 'Muntje gooien verplicht — vroeg in de ochtend het rustigst.' },
+      { n: 'Pantheon', cat: 'cultuur', lat: 41.8986, lng: 12.4769, note: 'Verbluffende koepel, gratis te bezoeken.' },
+      { n: 'Piazza Navona', cat: 'stad', lat: 41.8992, lng: 12.4731, note: 'Mooi plein met fonteinen; fijn voor een gelato-pauze.' },
+      { n: 'Villa Borghese', cat: 'natuur', lat: 41.9145, lng: 12.4923, note: 'Groot stadspark — schaduw en ruimte voor de kinderen.' },
+      { n: 'Trastevere', cat: 'eten', lat: 41.8896, lng: 12.4695, note: 'Sfeervolle wijk voor het avondeten.' }
+    ],
+    [ // 1 Mattinata / Gargano (gids dag 1-4)
+      { n: 'Monte Saraceno & Necropoli', cat: 'uitzicht', lat: 41.7000, lng: 16.0750, note: 'Uitzicht over kust en olijfvelden + honderden oude Daunische graven. Vrij toegankelijk, ~30 min. Stevige schoenen: rotsachtig.' },
+      { n: 'Foresta Umbra — Sentiero del Laghetto', cat: 'natuur', lat: 41.8200, lng: 16.0700, note: 'Koel beukenbos, wandeling ~4,5 km / 1 u langs een meertje met schildpadden. Ideaal op een hete dag; fijn voor een picknick.' },
+      { n: 'Vieste — centro storico & Cattedrale', cat: 'stad', lat: 41.8824, lng: 16.1758, note: 'Wit stadje, smalle steegjes, doorkijkjes naar zee. Parkeer aan de rand (€1/u of €5 totaal) en loop het centrum in.' },
+      { n: 'Pizzomunno & Spiaggia del Castello', cat: 'strand', lat: 41.8790, lng: 16.1800, note: 'De beroemde hoge witte kalkrots aan het strand van Vieste — even uitwaaien.' },
+      { n: 'Monte Sant\'Angelo — Santuario San Michele', cat: 'cultuur', lat: 41.7080, lng: 15.9560, note: 'UNESCO-pelgrimsoord: je daalt via een trap af in de grot. Basiliek gratis; museum/crypte €5. Goede schoenen, treden kunnen glad zijn.' },
+      { n: 'Monte Sant\'Angelo — kasteel & Rione Junno', cat: 'uitzicht', lat: 41.7060, lng: 15.9550, note: 'Normandisch-Zwabisch kasteel met uitzicht over de Gargano, plus de oudste witte wijk van het dorp.' },
+      { n: 'Peschici — centro & Castello', cat: 'uitzicht', lat: 41.9460, lng: 16.0150, note: 'Wit dorp hoog op de rots. Rij het centrum niet in; parkeer aan de rand (blauwe zone ~€1/u).' },
+      { n: 'Baia di Peschici', cat: 'strand', lat: 41.9400, lng: 16.0200, note: 'Breed zandstrand met helder water, direct onder het dorp. Ligbedden te huur bij de lido\'s.' },
+      { n: 'Il Capriccio Dietro L\'Angolo', cat: 'eten', lat: 41.7110, lng: 16.0520, note: 'Aanrader in het centrum van Mattinata, op loopafstand van Agriturismo Giorgio.' },
+      { n: 'Osteria Vecchia Vieste', cat: 'eten', lat: 41.8820, lng: 16.1750, note: 'Top adres voor het diner in de oude kern van Vieste.' },
+      { n: 'Al Trabucco da Mimì (Peschici)', cat: 'eten', lat: 41.9350, lng: 16.0050, note: 'Diner op een historische houten visconstructie boven zee — magisch bij zonsondergang. Reserveren is vaak een must!' }
+    ],
+    [ // 2 Matera (gids dag 5-6: Trani, Matera, Altamura & Gravina)
+      { n: 'Cattedrale di San Nicola Pellegrino (Trani)', cat: 'cultuur', lat: 41.2820, lng: 16.4180, note: 'Romaanse kathedraal pal aan zee — één van de mooiste plekken van Puglia. Meestal ~09:00-12:30 en 15:30-19:00; toegang doorgaans gratis.' },
+      { n: 'Castello Svevo di Trani', cat: 'cultuur', lat: 41.2830, lng: 16.4200, note: 'Middeleeuws kasteel aan zee van Frederik II. Klein, kort bezoek. Entree €8.' },
+      { n: 'Sassi di Matera', cat: 'cultuur', lat: 40.6664, lng: 16.6107, note: 'De beroemde grotwijken. Loop Sasso Barisano (netter) en Sasso Caveoso (rauwer). Goud licht rond zonsondergang.' },
+      { n: 'Palombaro Lungo', cat: 'cultuur', lat: 40.6670, lng: 16.6100, note: 'Enorm ondergronds waterreservoir onder Piazza Vittorio Veneto. Entree €3 p.p.' },
+      { n: 'Casa Grotta di Vico Solitario', cat: 'cultuur', lat: 40.6640, lng: 16.6120, note: 'Ingerichte grotwoning die laat zien hoe men hier tot de jaren \'60 leefde. Entree €5 p.p.' },
+      { n: 'Santa Maria de Idris', cat: 'cultuur', lat: 40.6645, lng: 16.6130, note: 'Spectaculaire rotskerk; vanaf het terras kijk je uit over heel Sasso Caveoso. Entree €4 p.p.' },
+      { n: 'Belvedere di Murgia Timone', cat: 'uitzicht', lat: 40.6690, lng: 16.6210, note: 'Het mooiste uitzicht op de Sassi, aan de overkant van de kloof. Via de hangbrug (voelt wiebelig, maar veilig) of met de auto.' },
+      { n: 'Altamura — Panificio Santa Caterina', cat: 'eten', lat: 40.8270, lng: 16.5530, note: 'Oudste bakkerij van Altamura, met de lekkerste focaccia. Rij kan lang zijn, maar het is het waard.' },
+      { n: 'Gravina — Ponte Acquedotto', cat: 'uitzicht', lat: 40.8180, lng: 16.4150, note: 'Aquaduct-brug over de diepe kloof; steek over voor het mooiste uitzicht terug op de stad. Goede schoenen.' },
+      { n: 'Gravina Sotterranea', cat: 'grot', lat: 40.8190, lng: 16.4160, note: 'Ondergronds labyrint van cisternen, graanschuren en rotskerken. Rondleiding €15 p.p., reserveren aangeraden. Ideaal als het buiten te warm is.' },
+      { n: 'MàniMa (Trani)', cat: 'eten', lat: 41.2810, lng: 16.4170, note: 'Visgerechten op een rustige plek vlak bij de haven van Trani.' },
+      { n: 'Trattoria del Caveoso (Matera)', cat: 'eten', lat: 40.6640, lng: 16.6125, note: 'Sfeervol diner in de Sasso Caveoso.' }
+    ],
+    [ // 3 Giurdignano / Otranto (gids dag 7-8: Lecce & Otranto)
+      { n: 'Lecce — Basilica di Santa Croce', cat: 'cultuur', lat: 40.3525, lng: 18.1750, note: 'Hét hoogtepunt van de Lecce-barok: een gevel vol beelden en fantasiefiguren uit lokale pietra leccese.' },
+      { n: 'Lecce — Piazza del Duomo', cat: 'stad', lat: 40.3510, lng: 18.1700, note: 'Het mooiste plein van de stad, helemaal ingesloten door kathedraal, klokkentoren en bisschoppelijk paleis.' },
+      { n: 'Lecce — Piazza Sant\'Oronzo', cat: 'stad', lat: 40.3520, lng: 18.1730, note: 'Levendig plein met een Romeins amfitheater. Proef een warme rustico leccese op een terras.' },
+      { n: 'Pasticceria Natale (Lecce)', cat: 'eten', lat: 40.3535, lng: 18.1740, note: 'Begin als de locals met een pasticciotto — warm taartje met romige vulling, de trots van Lecce.' },
+      { n: 'Grotta della Poesia', cat: 'strand', lat: 40.2830, lng: 18.4270, note: 'Natuurlijk rond zwemgat in de rotsen met turquoise water. Zwemmen mag niet meer, maar het uitzicht is bijzonder. Entree €3 p.p.' },
+      { n: 'Cava di Bauxite', cat: 'uitzicht', lat: 40.1370, lng: 18.4800, note: 'Voormalige bauxietmijn even buiten Otranto: roodoranje aarde en felgroen water. Doe geen witte schoenen/kleren aan — de aarde geeft af.' },
+      { n: 'Otranto — Castello Aragonese', cat: 'cultuur', lat: 40.1460, lng: 18.4910, note: 'Imposant fort met dikke muren en ronde torens; mooi uitzicht over haven en kustlijn. Entree €12 p.p.' },
+      { n: 'Otranto — Kathedraal & mozaïekvloer', cat: 'cultuur', lat: 40.1470, lng: 18.4890, note: '12e-eeuwse mozaïekvloer met de Levensboom; achter het altaar de relieken van de Martelaren van Otranto (1480).' },
+      { n: 'Otranto — Molo San Nicola', cat: 'uitzicht', lat: 40.1480, lng: 18.4900, note: 'Wandeling langs de stadsmuren en de pier; vooral mooi bij zonsondergang als de vissersboten terugkeren.' },
+      { n: 'Menhirs van Giurdignano', cat: 'cultuur', lat: 40.1500, lng: 18.3500, note: 'Het "megalietendorp" met staande stenen, vlak bij je verblijf — een ander, prehistorisch Puglia.' },
+      { n: 'Osteria Da Angiulino (Lecce)', cat: 'eten', lat: 40.3510, lng: 18.1715, note: 'Favoriete lunch- én dinerplek in Lecce (ook Moro en Dall\'antiquario zijn aanraders).' },
+      { n: 'LaltroBaffo (Otranto)', cat: 'eten', lat: 40.1465, lng: 18.4905, note: 'Terras in Otranto, wat prijziger maar goed. Sluit af met een glas wijn bij Cala dei Normanni.' }
+    ],
+    [ // 4 Alliste / Salento (gids dag 9-12: Leuca, Gallipoli, Specchia, Nardò)
+      { n: 'Boottocht met Rocco — Santa Maria di Leuca', cat: 'boot', lat: 39.7930, lng: 18.3710, note: 'Geplande activiteit! ~3 u langs de rotskust en zeegrotten (Grotta del Soffio, della Vora, delle Mannute...). Onderweg vaak gelegenheid om te zwemmen.' },
+      { n: 'Santa Maria di Leuca — Punta Meliso', cat: 'uitzicht', lat: 39.7945, lng: 18.3580, note: 'De zuidpunt van Puglia waar de Adriatische en Ionische Zee samenkomen, met vuurtoren.' },
+      { n: 'Gallipoli — oude stad & Castello', cat: 'stad', lat: 40.0556, lng: 17.9920, note: 'Vissersstadje op een eilandje met het Castello Angioino-Aragonese. Parkeer gratis net buiten het centrum (niet in de blauwe lijnen).' },
+      { n: 'Spiaggia della Purità (Gallipoli)', cat: 'strand', lat: 40.0560, lng: 17.9710, note: 'Stadsstrand direct onder het oude centrum — een duik in helderblauw water.' },
+      { n: 'Frantoi Ipogei (Gallipoli)', cat: 'cultuur', lat: 40.0555, lng: 17.9700, note: 'Ondergrondse olijfoliemolens die laten zien hoe de olie vroeger in het donker werd geperst.' },
+      { n: 'Specchia — centro storico', cat: 'stad', lat: 39.9390, lng: 18.3050, note: 'Authentiek, rustig wit dorp met Palazzo Risolo. Let op: ZTL-zone, parkeer aan de rand (bv. Via Giacomo Matteotti).' },
+      { n: 'Nardò — Piazza Salandra', cat: 'stad', lat: 40.1790, lng: 18.0330, note: 'Prachtig barok plein. De oude stad ligt volledig in een camera-bewaakte ZTL — parkeer aan de rand (bv. Via XXV Luglio).' },
+      { n: 'Porto Selvaggio', cat: 'natuur', lat: 40.1670, lng: 17.9270, note: 'Natuurreservaat: 15-20 min door dennenbos (of shuttle €2,50 p.p.) naar een rotsachtige baai met helder water. Waterschoenen mee. Parkeren ~€5/dag.' },
+      { n: 'Pescoluse — Maldive del Salento', cat: 'strand', lat: 39.8230, lng: 18.2980, note: 'Wit zand en ondiep helder water — top met kinderen.' },
+      { n: 'Lido Onda Marina', cat: 'strand', lat: 39.9000, lng: 18.0500, note: 'Goed en betaalbaar strand in de buurt van je verblijf.' },
+      { n: 'La Puritate (Gallipoli)', cat: 'eten', lat: 40.0555, lng: 17.9690, note: 'Lunch met uitzicht over zee aan de stadsmuren: verse orecchiette of een zeevruchtensalade.' },
+      { n: 'Caffè Parisi (Nardò)', cat: 'eten', lat: 40.1790, lng: 18.0335, note: 'Espresso of cappuccino met een pasticciotto op het terras aan Piazza Salandra.' },
+      { n: 'Clantò / Antico Monastero (Felline)', cat: 'eten', lat: 39.9400, lng: 18.1000, note: 'Leuke restaurantjes vlak bij Masseria Cisternella.' }
+    ],
+    [ // 5 Monopoli / Valle d'Itria (gids dag 13-16: Ostuni, Monopoli, Polignano, Bari, trulli)
+      { n: 'Ostuni — la città bianca', cat: 'stad', lat: 40.7300, lng: 17.5770, note: 'De witte stad op een heuvel: doolhof van trappen en gekalkte muren, Cattedrale, de Arco di Scoppa en het fotoplekje Via Brancasi.' },
+      { n: 'Monopoli — Porto Antico', cat: 'stad', lat: 40.9510, lng: 17.3010, note: 'Oude haven met de karakteristieke blauwe gozzi-bootjes; mooie binnenstad. Parkeer gratis, ~15 min lopen.' },
+      { n: 'Castello Carlo V & Cala Porta Vecchia', cat: 'strand', lat: 40.9530, lng: 17.3000, note: 'Spaans kasteel aan zee + het stadsstrandje Cala Porta Vecchia voor een korte duik.' },
+      { n: 'Polignano a Mare — Lama Monachile', cat: 'uitzicht', lat: 40.9960, lng: 17.2180, note: 'Beroemd kiezelstrandje tussen de kliffen. Kom vroeg, het vult zich snel. Het stadje hangt spectaculair boven zee.' },
+      { n: 'Grotta Palazzese (Polignano)', cat: 'uitzicht', lat: 40.9940, lng: 17.2240, note: 'Bezoek het voor het spectaculaire uitzicht, maar eet er niet (duur en tegenvallend). Leuk alternatief: Grotta Ardito op het dak.' },
+      { n: 'Alberobello — trulli', cat: 'cultuur', lat: 40.7830, lng: 17.2370, note: 'UNESCO trulli-stad. Ga vroeg, vóór de drukte. Rione Monti voor de foto\'s, Aia Piccola voor het echte dorpsleven. Trullo Sovrano €2,50.' },
+      { n: 'Locorotondo', cat: 'uitzicht', lat: 40.7550, lng: 17.3270, note: 'Witte "ronde" stad op een heuvel met puntdaken (cummerse). Sluit af met een glas Locorotondo DOC.' },
+      { n: 'Cisternino', cat: 'stad', lat: 40.7430, lng: 17.4260, note: 'Wit dorp in de Valle d\'Itria. Beleef de fornelli pronti: kies bombette (vleesrolletjes) en laat ze ter plekke grillen.' },
+      { n: 'Grotte di Castellana', cat: 'grot', lat: 40.8810, lng: 17.1480, note: 'Spectaculaire druipsteengrotten — heerlijk koel op hete dagen.' },
+      { n: 'Bari Vecchia & Basilica di San Nicola', cat: 'cultuur', lat: 41.1300, lng: 16.8690, note: 'Oud hart van Bari: de Via delle Orecchiette waar vrouwen pasta draaien, en de basiliek waar Sint-Nicolaas (onze Sinterklaas) ligt. Proef focaccia barese.' },
+      { n: 'La Locanda dei Mercanti (Monopoli)', cat: 'eten', lat: 40.9512, lng: 17.3012, note: 'Verse pasta met zeevruchten in Monopoli (ook The King Street Food is een favoriet).' },
+      { n: 'Trattoria Fave e Fogghje (Ostuni)', cat: 'eten', lat: 40.7305, lng: 17.5765, note: 'Orecchiette met cime di rapa en burrata — pure smaken uit Puglia.' },
+      { n: 'Il Super Mago del Gelo (Polignano)', cat: 'eten', lat: 40.9960, lng: 17.2210, note: 'Sluit de dag af met een caffè speciale: koffie, amandellikeur, citroenrasp en slagroom. Uniek voor Polignano.' }
+    ],
+    [ // 6 Napels
+      { n: 'Pompeii', cat: 'cultuur', lat: 40.7497, lng: 14.4869, note: 'De stad die de Vesuvius bedolf — neem water en petjes mee.' },
+      { n: 'Vesuvius', cat: 'natuur', lat: 40.8210, lng: 14.4260, note: 'Wandel naar de krater; uitzicht over de baai.' },
+      { n: 'Napels — centro storico', cat: 'eten', lat: 40.8500, lng: 14.2600, note: 'Bakermat van de pizza — proef een echte Margherita.' },
+      { n: 'Herculaneum', cat: 'cultuur', lat: 40.8060, lng: 14.3480, note: 'Beter bewaard en compacter dan Pompeii.' },
+      { n: 'Sorrento & kust', cat: 'uitzicht', lat: 40.6260, lng: 14.3760, note: 'Mooie kuststad als opstap naar de Amalfikust.' }
+    ],
+    [] // 7 Rome -> Amsterdam (reisdag, geen plekken)
+  ];
+
+  // ----------------------------------------------------------------------
+  //  GOED OM TE WETEN per stop (praktische tips uit de reisgids).
+  // ----------------------------------------------------------------------
+  const TIPS = [
+    [], // 0 Rome
+    [ // 1 Mattinata / Gargano
+      '⚠️ ZTL: rij de oude centra van Vieste en Peschici niet in (boetes). Parkeer aan de rand en loop het laatste stuk.',
+      '🅿️ Vieste: parkeren aan de rand kan voor €1 per uur of €5 totaal.',
+      '🍽️ Al Trabucco da Mimì (Peschici): reserveren is vaak een must, zeker rond zonsondergang.'
+    ],
+    [ // 2 Matera
+      '🅿️ Matera: Parkeergarage Damasco ligt het dichtst bij je hotel en heeft shuttleservice. ~€25/dag, uiterlijk 13:00 verlaten. WhatsApp: +39 389 192 4077.',
+      '⚠️ ZTL Matera: de garage ligt in een ZTL-zone. Je mag er de hele dag naartoe rijden, behalve tussen 20:30 en 00:00.',
+      '🎟️ Gravina Sotterranea: rondleiding €15 p.p. — reserveren aangeraden. Ideaal als het buiten te warm is.'
+    ],
+    [ // 3 Giurdignano / Otranto
+      '⚠️ ZTL: Lecce en Otranto hebben autoluwe zones; parkeer buiten het centrum en loop.',
+      '🍰 Lecce: begin de dag zoals de locals met een pasticciotto (Pasticceria Natale of Caffè Alvino).',
+      '👕 Cava di Bauxite: doe geen witte schoenen of kleren aan — de rode aarde geeft snel af.'
+    ],
+    [ // 4 Alliste / Salento
+      '⛵ Boottocht met Rocco: 14:00 uur bij Porto Turistico Santa Maria di Leuca – Molo I. Wees 20-30 min vooraf aanwezig. Meenemen: water, zwemkleding, handdoek, zonnebrand en waterschoenen.',
+      '⚠️ ZTL: Nardò en Specchia hebben camera-bewaakte zones; parkeer aan de rand.',
+      '🅿️ Porto Selvaggio: parkeer bij de pineta (~€5/dag), dan 15-20 min lopen of de shuttle (€2,50 p.p.).'
+    ],
+    [ // 5 Monopoli / Valle d'Itria
+      '🅿️ Ostuni: parkeren is van 15 jun–15 sep betaald van 9:00–02:00 (€0,80/u; 21:00–02:00 €1,70/u).',
+      '⏰ Alberobello: ga vroeg in de ochtend, vóór de drukte losbarst.',
+      '🍦 Polignano: bezoek Grotta Palazzese wél voor het uitzicht, maar eet er niet (duur/tegenvallend) — alternatief Grotta Ardito.'
+    ],
+    [], // 6 Napels
+    []  // 7 reisdag
+  ];
+
+  const CATS = {
+    strand:   { em: '🏖️', kl: '#2E9BB0', label: 'strand' },
+    stad:     { em: '🏘️', kl: '#8A5A2B', label: 'dorp/stad' },
+    cultuur:  { em: '🏛️', kl: '#A8421F', label: 'cultuur' },
+    grot:     { em: '🕳️', kl: '#5B6770', label: 'grot' },
+    uitzicht: { em: '🌅', kl: '#C98A2B', label: 'uitzicht' },
+    natuur:   { em: '🌳', kl: '#5E7D3A', label: 'natuur' },
+    eten:     { em: '🍝', kl: '#B0432E', label: 'eten' },
+    boot:     { em: '⛵', kl: '#2E7D9E', label: 'boottocht' }
+  };
+
+  // ---------- Datum-helpers (Nederlands) ----------
+  const DAYS = ['zo','ma','di','wo','do','vr','za'];
+  const MONTHS = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+  const d = (s) => { const [y,m,dd] = s.split('-').map(Number); return new Date(y, m-1, dd); };
+  const today = () => { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); };
+  const dayDiff = (a,b) => Math.round((a - b) / 86400000);
+  const fmtShort = (dt) => `${DAYS[dt.getDay()]} ${dt.getDate()} ${MONTHS[dt.getMonth()]}`;
+
+  function wxInfo(code) {
+    const m = { 0:['☀️','helder'],1:['🌤️','vrij zonnig'],2:['⛅','half bewolkt'],3:['☁️','bewolkt'],
+      45:['🌫️','mist'],48:['🌫️','mist'],51:['🌦️','motregen'],53:['🌦️','motregen'],55:['🌦️','motregen'],
+      61:['🌧️','regen'],63:['🌧️','regen'],65:['🌧️','zware regen'],71:['🌨️','sneeuw'],73:['🌨️','sneeuw'],
+      75:['🌨️','sneeuw'],80:['🌦️','buien'],81:['🌦️','buien'],82:['⛈️','hevige buien'],95:['⛈️','onweer'],
+      96:['⛈️','onweer'],99:['⛈️','zwaar onweer'] };
+    return m[code] || ['🌡️','—'];
+  }
+
+  function computeState() {
+    const t = today();
+    const first = d(TRIP[0].start), last = d(TRIP[TRIP.length-1].end);
+    let current = -1;
+    for (let i = 0; i < TRIP.length; i++) {
+      const s = d(TRIP[i].start), e = d(TRIP[i].end);
+      if (t >= s && (t < e || (i === TRIP.length-1 && t <= e))) { current = i; break; }
+    }
+    if (t < first) return { phase: 'before', daysToStart: dayDiff(first, t) };
+    if (t > last)  return { phase: 'after' };
+    return { phase: 'during', current };
+  }
+
+  function renderHero(state) {
+    const big = document.getElementById('hero-big'), sub = document.getElementById('hero-sub');
+    const bar = document.getElementById('hero-countbar'), next = document.getElementById('hero-next');
+    if (state.phase === 'before') {
+      const s = TRIP[0];
+      big.textContent = `Nog ${state.daysToStart} ${state.daysToStart === 1 ? 'dag' : 'dagen'}`;
+      sub.textContent = `tot het vertrek naar ${s.name}`;
+      bar.innerHTML = `<div class="stat"><div class="num">${TRIP.length}</div><div class="cap">stops</div></div>
+        <div class="stat"><div class="num">${dayDiff(d(TRIP[TRIP.length-1].end), d(TRIP[0].start))}</div><div class="cap">dagen reis</div></div>`;
+      next.innerHTML = `🛫 <span>Eerste bestemming: <b>${s.name}</b> op ${fmtShort(d(s.start))}</span>`;
+      return { lat: s.lat, lng: s.lng, date: s.start, place: s.name };
+    }
+    if (state.phase === 'after') {
+      big.textContent = 'Welkom thuis 🇳🇱'; sub.textContent = 'De reis zit erop — bewaar de mooie herinneringen.';
+      bar.innerHTML = ''; next.innerHTML = ''; return null;
+    }
+    const cur = TRIP[state.current], t = today();
+    const leaveIn = dayDiff(d(cur.end), t), nextStop = TRIP[state.current + 1];
+    big.textContent = cur.name; sub.textContent = cur.accom;
+    bar.innerHTML = `<div class="stat"><div class="num">${Math.max(leaveIn,0)}</div><div class="cap">${leaveIn === 1 ? 'dag hier' : 'dagen hier'}</div></div>
+      <div class="stat"><div class="num">${state.current + 1}<span style="opacity:.6">/${TRIP.length}</span></div><div class="cap">stop</div></div>`;
+    next.innerHTML = nextStop ? `➜ <span>Hierna: <b>${nextStop.name}</b> · vanaf ${fmtShort(d(nextStop.start))}</span>` : `🏁 <span>Laatste stop van de reis</span>`;
+    const todayStr = new Date().toISOString().slice(0,10);
+    return { lat: cur.lat, lng: cur.lng, date: cur.end > todayStr ? todayStr : cur.start, place: cur.name };
+  }
+
+  function renderStops(state) {
+    const wrap = document.getElementById('stops'), t = today();
+    wrap.innerHTML = '';
+    TRIP.forEach((s, i) => {
+      const start = d(s.start), end = d(s.end), nights = dayDiff(end, start);
+      const isNow = state.phase === 'during' && state.current === i;
+      const isPast = t >= end && !isNow;
+      const card = document.createElement('div');
+      card.className = 'stop' + (isNow ? ' now' : '') + (isPast ? ' past' : '');
+      card.style.animationDelay = (i * 0.05) + 's';
+      const nightsLabel = nights <= 0 ? 'reisdag' : (nights === 1 ? '1 nacht' : nights + ' nachten');
+      const infoChip = i < TRIP.length - 1 ? `<a class="chip link" href="${stopInfoUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>` : '';
+      const addrChip = (i < TRIP.length - 1 && (isLodging(s.accom) || s.addr)) ? `<a class="chip link" href="${stopMapsUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 Adres</a>` : '';
+      const canOpen = (POIS[i] || []).length > 0;
+      if (canOpen) card.classList.add('clickable');
+      const chev = canOpen ? ' <span class="chev">›</span>' : '';
+      card.innerHTML = `<div class="daycol"><div class="dnum">${start.getDate()}</div><div class="dmon">${MONTHS[start.getMonth()]}</div><div class="arrow">▾</div></div>
+        <div class="info"><div class="nm">${s.name}${chev}</div><div class="ac">${s.accom}</div>
+          <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span>${addrChip}${infoChip}</div></div>`;
+      if (canOpen) card.onclick = () => openDestination(i);
+      wrap.appendChild(card);
+      if (i < TRIP.length - 1) {
+        const leg = document.createElement('div');
+        leg.className = 'leg'; leg.id = 'leg-' + i; leg.textContent = 'afstand laden…';
+        wrap.appendChild(leg);
+      }
+    });
+  }
+
+  // ---------- Weer (Open-Meteo, gratis) ----------
+  async function loadWeather(lat, lng, dateStr) {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=16`;
+    const res = await fetch(url); const json = await res.json();
+    if (!json.daily || !json.daily.time) return null;
+    const idx = json.daily.time.indexOf(dateStr);
+    if (idx === -1) return { outOfRange: true };
+    return { code: json.daily.weather_code[idx], max: Math.round(json.daily.temperature_2m_max[idx]), min: Math.round(json.daily.temperature_2m_min[idx]) };
+  }
+  async function fillStopWeather() {
+    let anyShown = false;
+    await Promise.all(TRIP.map(async (s, i) => {
+      const el = document.getElementById('wx-' + i); if (!el) return;
+      if (d(s.end) < today()) { el.remove(); return; }
+      try {
+        const w = await loadWeather(s.lat, s.lng, s.start);
+        if (!w) { el.textContent = 'weer onbekend'; el.classList.remove('loading'); return; }
+        if (w.outOfRange) { el.textContent = 'weer volgt'; el.classList.remove('loading'); return; }
+        const [em, txt] = wxInfo(w.code);
+        el.classList.remove('loading'); if (w.max >= 30) el.classList.add('warm');
+        el.innerHTML = `<span class="em">${em}</span> ${w.max}° / ${w.min}° · ${txt}`; anyShown = true;
+      } catch (e) { el.textContent = 'weer offline'; el.classList.remove('loading'); }
+    }));
+    if (anyShown) document.getElementById('wx-note').textContent = 'Weer komt live van Open-Meteo en ververst bij elke keer openen.';
+  }
+  async function fillHeroWeather(target) {
+    if (!target) return; const box = document.getElementById('hero-wx');
+    try {
+      const w = await loadWeather(target.lat, target.lng, target.date);
+      box.style.display = 'inline-flex';
+      if (!w || w.outOfRange) { box.innerHTML = `<span class="em">🗓️</span> Weersverwachting volgt dichter op de datum`; return; }
+      const [em, txt] = wxInfo(w.code);
+      box.innerHTML = `<span class="em">${em}</span> ${target.place}: ${w.max}° / ${w.min}° · ${txt}`;
+    } catch (e) {}
+  }
+
+  // ---------- Kaart + bezienswaardigheden ----------
+  let map = null, layer = null, markers = [];
+  let driveCache = {}, currentMapStop = 0;
+  let routeMap = null;
+  let routeLine = null;
+
+  function buildLegend() {
+    const used = new Set();
+    POIS.flat().forEach(p => used.add(p.cat));
+    document.getElementById('legend').innerHTML =
+      [...used].map(c => `<i>${CATS[c].em} ${CATS[c].label}</i>`).join('');
+  }
+
+  function buildTabs(activeIdx) {
+    const bar = document.getElementById('stopbar');
+    bar.innerHTML = '';
+    TRIP.forEach((s, i) => {
+      if (!POIS[i] || POIS[i].length === 0) return;
+      const b = document.createElement('button');
+      b.className = 'tab' + (i === activeIdx ? ' active' : '');
+      b.textContent = s.name;
+      b.onclick = () => selectStop(i);
+      b.dataset.idx = i;
+      bar.appendChild(b);
+    });
+  }
+
+  function mapsLink(lat, lng, name) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name)}`;
+  }
+
+  // ---------- Info-links (website / zoekopdracht over de plek) ----------
+  function searchUrl(q) { return 'https://www.google.com/search?q=' + encodeURIComponent(q); }
+  function poiInfoUrl(p, idx) { return p.url || searchUrl(`${p.n} ${TRIP[idx].name} Italië`); }
+  function isLodging(s) { return /agriturismo|masseria|hotel|b&b|camping|resort|villa|casa|sassi/i.test(s || ''); }
+  function stopMapsUrl(s) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.addr || `${s.accom} ${s.name}`); }
+  function stopInfoUrl(s) {
+    if (s.url) return s.url;
+    return searchUrl(isLodging(s.accom) ? `${s.accom} ${s.name}` : `${s.name} Italië`);
+  }
+
+  function pinIcon(emoji, color, home) {
+    return L.divIcon({ className: '', html: `<div class="pin${home ? ' home' : ''}" style="--c:${color}"><span>${emoji}</span></div>`,
+      iconSize: home ? [34,42] : [30,38], iconAnchor: home ? [17,40] : [15,36], popupAnchor: [0,-34] });
+  }
+
+  function selectStop(idx) {
+    currentMapStop = idx;
+    const stop = TRIP[idx], pois = POIS[idx] || [];
+    if (layer) layer.clearLayers(); markers = [];
+
+    const home = L.marker([stop.lat, stop.lng], { icon: pinIcon('🏡', null, true) })
+      .bindPopup(`<b>${stop.name}</b><br>${stop.accom}<br><a href="${stopInfoUrl(stop)}" target="_blank" rel="noopener">Meer info &rarr;</a>`);
+    layer.addLayer(home);
+    const bounds = [[stop.lat, stop.lng]];
+
+    pois.forEach((p, j) => {
+      const cat = CATS[p.cat];
+      const m = L.marker([p.lat, p.lng], { icon: pinIcon(cat.em, cat.kl) })
+        .bindPopup(`<b>${p.n}</b><br>${p.note}<br><a href="${mapsLink(p.lat,p.lng,p.n)}" target="_blank" rel="noopener">Route &rarr;</a> &middot; <a href="${poiInfoUrl(p, idx)}" target="_blank" rel="noopener">Info &rarr;</a>`);
+      layer.addLayer(m); markers[j] = m; bounds.push([p.lat, p.lng]);
+    });
+    if (bounds.length > 1) map.fitBounds(bounds, { padding: [40,40], maxZoom: 12 });
+    else map.setView([stop.lat, stop.lng], 12);
+
+    watchDetail(idx);
+    fillDriveTimes(idx);
+  }
+
+  // ---------- POI-lijst (met rijtijd vanaf je verblijf) ----------
+  function renderPoiList_OLD(idx, drives) {
+    const pois = POIS[idx] || [];
+    const list = document.getElementById('poilist'); list.innerHTML = '';
+    let arr = pois.map((p, j) => ({ p, j, dur: drives ? drives.dur[j] : null, dist: drives ? drives.dist[j] : null }));
+    if (drives) arr.sort((a, b) => (a.dur ?? 1e9) - (b.dur ?? 1e9));
+    let dividerDone = false;
+    arr.forEach(({ p, j, dur, dist }) => {
+      if (drives && !dividerDone && dur != null && dur > 25) {
+        const dv = document.createElement('div'); dv.className = 'poi-divider';
+        dv.innerHTML = `<span></span>Verder weg — leuk voor een aparte dag<span></span>`;
+        list.appendChild(dv); dividerDone = true;
+      }
+      const cat = CATS[p.cat];
+      let driveHtml = '';
+      if (dur != null) driveHtml = `<div class="poi-meta"><span class="drive">🚗 ${drives.est ? '~' : ''}${fmtDur(dur)}${dist != null ? ` · ${dist} km` : ''}</span></div>`;
+      else if (drives === null) driveHtml = `<div class="poi-meta"><span class="drive dim">afstand laden…</span></div>`;
+      const row = document.createElement('div'); row.className = 'poi';
+      row.innerHTML = `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
+        <div><div class="pn">${p.n}</div><div class="pc">${p.note}</div>${driveHtml}</div>
+        <div class="poi-links">
+          <a class="go" href="${mapsLink(p.lat,p.lng,p.n)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Route</a>
+          <a class="go info" href="${poiInfoUrl(p, idx)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>
+        </div>`;
+      row.onclick = () => { map.setView([p.lat, p.lng], 14); markers[j].openPopup();
+        document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      list.appendChild(row);
+    });
+  }
+
+  // ---------- Reisafstanden (OSRM, gratis, geen sleutel) ----------
+  function haversine(la1, lo1, la2, lo2) {
+    const R = 6371, r = Math.PI / 180;
+    const dLa = (la2-la1)*r, dLo = (lo2-lo1)*r;
+    const a = Math.sin(dLa/2)**2 + Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dLo/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  function estMin(a, b) { return Math.round(haversine(a.lat,a.lng,b.lat,b.lng) * 1.3 / 65 * 60); }
+  function estKm(a, b) { return Math.round(haversine(a.lat,a.lng,b.lat,b.lng) * 1.3); }
+  function fmtDur(min) { return min < 60 ? `${min} min` : `${Math.floor(min/60)} u ${String(min%60).padStart(2,'0')}`; }
+
+  async function osrmTableFromHome(stop, pois) {
+    const coords = [[stop.lng, stop.lat], ...pois.map(p => [p.lng, p.lat])];
+    const str = coords.map(c => c[0] + ',' + c[1]).join(';');
+    const url = `https://router.project-osrm.org/table/v1/driving/${str}?sources=0&annotations=duration,distance`;
+    const res = await fetch(url); const j = await res.json();
+    if (j.code !== 'Ok' || !j.durations) throw new Error('no data');
+    const durs = j.durations[0], dists = j.distances ? j.distances[0] : null;
+    return {
+      est: false,
+      dur: durs.slice(1).map(s => s == null ? null : Math.round(s/60)),
+      dist: dists ? dists.slice(1).map(m => m == null ? null : Math.round(m/1000)) : pois.map(() => null)
+    };
+  }
+
+  async function fillDriveTimes(idx) {
+    if (driveCache[idx]) { if (currentMapStop === idx) renderDetailList(idx); return; }
+    const stop = TRIP[idx], pois = POIS[idx] || [];
+    if (!pois.length) return;
+    let drives;
+    try { drives = await osrmTableFromHome(stop, pois); }
+    catch (e) { drives = { est: true, dur: pois.map(p => estMin(stop, p)), dist: pois.map(p => estKm(stop, p)) }; }
+    driveCache[idx] = drives;
+    if (currentMapStop === idx) renderDetailList(idx);
+  }
+
+  async function fillLegs() {
+    const coords = TRIP.map(s => [s.lng, s.lat]);
+    let matrix = null;
+    try {
+      const str = coords.map(c => c[0] + ',' + c[1]).join(';');
+      const url = `https://router.project-osrm.org/table/v1/driving/${str}?annotations=duration,distance`;
+      const res = await fetch(url); const j = await res.json();
+      if (j.code === 'Ok' && j.durations) matrix = { dur: j.durations, dist: j.distances };
+    } catch (e) {}
+    for (let i = 0; i < TRIP.length - 1; i++) {
+      const el = document.getElementById('leg-' + i); if (!el) continue;
+      let min, km, est = false;
+      if (matrix && matrix.dur[i] && matrix.dur[i][i+1] != null) {
+        min = Math.round(matrix.dur[i][i+1] / 60);
+        km = matrix.dist && matrix.dist[i][i+1] != null ? Math.round(matrix.dist[i][i+1] / 1000) : null;
+      } else { min = estMin(TRIP[i], TRIP[i+1]); km = estKm(TRIP[i], TRIP[i+1]); est = true; }
+      if (min === 0 && km === 0) { el.remove(); continue; }
+      el.innerHTML = `🚗 ${est ? '~' : ''}${fmtDur(min)}${km != null ? ` · ${km} km` : ''}`;
+    }
+  }
+
+  // ---------- Overzichtskaart met de route (Route-tab) ----------
+  function numIcon(n) {
+    return L.divIcon({ className: '', html: `<div class="numpin">${n}</div>`, iconSize: [26,26], iconAnchor: [13,13], popupAnchor: [0,-12] });
+  }
+  function routeCoords() { return TRIP.map(s => [s.lat, s.lng]); }
+  function initRouteMap() {
+    if (typeof L === 'undefined') {
+      document.getElementById('routemap').style.display = 'none';
+      return;
+    }
+    routeMap = L.map('routemap', { scrollWheelZoom: false });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19, subdomains: 'abcd'
+    }).addTo(routeMap);
+    const coords = routeCoords();
+    // voorlopige rechte lijn; wordt vervangen door de route over de weg
+    routeLine = L.polyline(coords, { color: '#C45A38', weight: 3, dashArray: '7 7', opacity: 0.6 }).addTo(routeMap);
+    TRIP.forEach((s, i) => {
+      L.marker([s.lat, s.lng], { icon: numIcon(i + 1) }).addTo(routeMap)
+        .bindPopup(`<b>${i + 1}. ${s.name}</b><br>${fmtShort(d(s.start))}`);
+    });
+    routeMap.fitBounds(coords, { padding: [34, 34] });
+    setTimeout(() => routeMap.invalidateSize(), 200);
+    drawRoadRoute();
+  }
+  async function drawRoadRoute() {
+    try {
+      const str = TRIP.map(s => `${s.lng},${s.lat}`).join(';');
+      const url = `https://router.project-osrm.org/route/v1/driving/${str}?overview=full&geometries=geojson`;
+      const res = await fetch(url); const j = await res.json();
+      if (j.code !== 'Ok' || !j.routes || !j.routes[0]) return;
+      const latlngs = j.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+      if (routeLine) routeMap.removeLayer(routeLine);
+      routeLine = L.polyline(latlngs, { color: '#C45A38', weight: 4, opacity: 0.9, className: 'route-draw' }).addTo(routeMap);
+    } catch (e) { /* rechte lijn blijft staan */ }
+  }
+  function refreshRouteMap() {
+    if (!routeMap) return;
+    routeMap.invalidateSize();
+    routeMap.fitBounds(routeCoords(), { padding: [34, 34] });
+  }
+
+  function initMap(state) {
+    if (typeof L === 'undefined') {
+      document.getElementById('map').innerHTML = '<div style="padding:20px;text-align:center;color:#6B5D4E">Kaart kon niet laden (geen verbinding?).</div>';
+      return;
+    }
+    map = L.map('map', { scrollWheelZoom: false }).setView([41, 16], 6);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19, subdomains: 'abcd'
+    }).addTo(map);
+    layer = L.layerGroup().addTo(map);
+
+    let active = 0;
+    if (state.phase === 'during') active = state.current;
+    else if (state.phase === 'after') active = TRIP.length - 2;
+    if (!POIS[active] || POIS[active].length === 0) active = 0;
+    currentMapStop = active;
+
+    buildLegend();
+    setTimeout(() => map.invalidateSize(), 200);
+  }
+
+  // Sfeer per bestemming (gradient + emoji), op volgorde van TRIP.
+  const VIBES = [
+    { g: 'linear-gradient(150deg,#B5651D,#8a4a14)', em: '🏛️' },
+    { g: 'linear-gradient(150deg,#2E8B9E,#1f6675)', em: '🌊' },
+    { g: 'linear-gradient(150deg,#7a6a52,#534734)', em: '🪨' },
+    { g: 'linear-gradient(150deg,#2E9BB0,#1f7585)', em: '🐚' },
+    { g: 'linear-gradient(150deg,#1FA6B8,#15808f)', em: '🏖️' },
+    { g: 'linear-gradient(150deg,#3E7C8C,#2b5a66)', em: '⛵' },
+    { g: 'linear-gradient(150deg,#C0492E,#8f3320)', em: '🌋' },
+    { g: 'linear-gradient(150deg,#8A5A2B,#5f3c1c)', em: '🧳' }
+  ];
+
+  // Open de detailweergave (kaart + activiteiten) van één bestemming.
+  function openDestination(idx) {
+    if (!POIS[idx] || POIS[idx].length === 0) return;
+    currentMapStop = idx;
+    const s = TRIP[idx], v = VIBES[idx] || VIBES[0];
+    const hero = document.getElementById('detail-hero');
+    hero.style.background = v.g;
+    hero.innerHTML = `<div class="dh-name">${esc(s.name)}</div>
+      <div class="dh-dates">${esc(s.accom)} · ${fmtShort(d(s.start))} – ${fmtShort(d(s.end))}</div>
+      ${(isLodging(s.accom) || s.addr) ? `<a class="dh-nav" href="${stopMapsUrl(s)}" target="_blank" rel="noopener">📍 Adres &amp; route</a>` : ''}
+      <span class="dh-em">${v.em}</span>`;
+    renderTips(idx);
+    showTab('detail');
+  }
+
+  // Praktische tips ("Goed om te weten") per bestemming.
+  function renderTips(idx) {
+    const box = document.getElementById('detail-tips'); if (!box) return;
+    const tips = (typeof TIPS !== 'undefined' && TIPS[idx]) ? TIPS[idx] : [];
+    if (!tips.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<details class="tips" open>
+      <summary>ℹ️ Goed om te weten</summary>
+      <ul>${tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+    </details>`;
+  }
+
+  // ---------- Samen plannen / stemmen (Firebase) ----------
+  let db = null, me = null, detailUnsub = null, detailDocs = [], firebaseReady = false;
+  let vandaagStop = null, vandaagDocs = [], vandaagWeather = undefined, vandaagTeaser = false, vandaagUnsub = null;
+  const GUEST_NAME = 'Gast';
+  function isGuest() { return me === GUEST_NAME; }
+  function canEdit() { return firebaseReady && !isGuest(); }
+
+  const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+  function initData() {
+    if (!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('PLAK') === 0) { firebaseReady = false; return; }
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore(); firebaseReady = true;
+    } catch (e) { firebaseReady = false; }
+  }
+
+  function voteCount(v) { return v ? Object.keys(v).length : 0; }
+
+  // Luister naar de gedeelde ideeën/stemmen van deze bestemming.
+  function watchDetail(idx) {
+    detailDocs = [];
+    if (detailUnsub) { detailUnsub(); detailUnsub = null; }
+    if (!firebaseReady) { renderDetailList(idx); return; }
+    detailUnsub = db.collection('activities')
+      .where('trip', '==', TRIP_ID).where('stop', '==', idx)
+      .onSnapshot(
+        (snap) => { if (currentMapStop !== idx) return; detailDocs = snap.docs.map(dc => ({ id: dc.id, ...dc.data() })); renderDetailList(idx); },
+        () => { renderDetailList(idx); }
+      );
+  }
+
+  // Een gestemd item aan/uit zetten; maakt zo nodig een doc aan voor een vaste plek.
+  function voteItem(it, idx) {
+    if (!canEdit() || needName()) return;
+    if (it.doc) { toggleVote(it.doc.id); return; }
+    db.collection('activities').add({
+      trip: TRIP_ID, stop: idx, title: it.title, note: it.note || '', cat: it.cat || 'stad',
+      votes: { [me]: true }, addedBy: me, created: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => {});
+  }
+
+  function needName() {
+    if (!me) { alert('Log eerst in.'); return true; }
+    return false;
+  }
+
+  function addActivity(title, cat, note, idx) {
+    if (!canEdit() || needName()) return;
+    db.collection('activities').add({
+      trip: TRIP_ID, stop: idx, title, note: note || '', cat: cat || 'stad',
+      votes: { [me]: true }, addedBy: me, created: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(() => alert('Toevoegen lukte niet — check je verbinding.'));
+  }
+
+  function toggleVote(id) {
+    if (!canEdit() || needName()) return;
+    const it = detailDocs.find(x => x.id === id); if (!it) return;
+    const votes = Object.assign({}, it.votes);
+    if (votes[me]) delete votes[me]; else votes[me] = true;
+    db.collection('activities').doc(id).update({ votes }).catch(() => {});
+  }
+
+  function removeItem(id) {
+    if (!canEdit()) return;
+    const it = detailDocs.find(x => x.id === id); if (!it) return;
+    if (confirm(`"${it.title}" verwijderen uit de lijst?`)) {
+      db.collection('activities').doc(id).delete().catch(() => {});
+    }
+  }
+
+  // ---------- Detail-lijst: vaste plekken + eigen ideeën, met stemmen ----------
+  function serverTime() { return firebase.firestore.FieldValue.serverTimestamp(); }
+  function ensureDoc(it, idx) {
+    if (it.doc) return Promise.resolve(db.collection('activities').doc(it.doc.id));
+    return db.collection('activities').add({
+      trip: TRIP_ID, stop: idx, title: it.title, note: it.note || '', cat: it.cat || 'stad',
+      votes: {}, done: false, notes: [], addedBy: me, created: serverTime()
+    });
+  }
+  function toggleDone(it, idx) {
+    if (!canEdit() || needName()) return;
+    const nd = !it.done;
+    ensureDoc(it, idx).then(ref => ref.update({ done: nd })).catch(() => {});
+  }
+  function addNote(it, idx, text) {
+    if (!canEdit() || needName()) return;
+    const nt = { by: me, text: text, t: Date.now() };
+    ensureDoc(it, idx).then(ref => ref.update({ notes: firebase.firestore.FieldValue.arrayUnion(nt) })).catch(() => {});
+  }
+
+  function renderDetailList(idx) {
+    const pois = POIS[idx] || [];
+    const drives = driveCache[idx] || null;
+    const list = document.getElementById('poilist'); if (!list) return;
+    list.innerHTML = '';
+    document.getElementById('poi-count').textContent = `${pois.length} plekken bij ${TRIP[idx].name}`;
+
+    const byTitle = {};
+    detailDocs.forEach(dc => { byTitle[(dc.title || '').toLowerCase()] = dc; });
+    const poiTitles = new Set(pois.map(p => p.n.toLowerCase()));
+
+    const mk = (poi, j, dc, custom) => ({
+      poi, j, doc: dc || null, title: custom ? dc.title : poi.n, note: custom ? dc.note : poi.note,
+      cat: custom ? dc.cat : poi.cat, votes: dc ? dc.votes : null,
+      done: dc ? !!dc.done : false,
+      notes: dc && Array.isArray(dc.notes) ? dc.notes.slice().sort((a, b) => (a.t || 0) - (b.t || 0)) : [],
+      dur: (!custom && drives) ? drives.dur[j] : null, dist: (!custom && drives) ? drives.dist[j] : null, custom
+    });
+
+    let items = pois.map((p, j) => mk(p, j, byTitle[p.n.toLowerCase()], false));
+    detailDocs.filter(dc => !poiTitles.has((dc.title || '').toLowerCase())).forEach(dc => items.push(mk(null, -1, dc, true)));
+
+    items.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0)
+      || voteCount(b.votes) - voteCount(a.votes) || ((a.dur ?? 1e9) - (b.dur ?? 1e9)));
+    const top = items.filter(x => !x.done).length ? voteCount(items.find(x => !x.done).votes) : 0;
+
+    items.forEach((it, n) => {
+      const cat = CATS[it.cat] || { em: '📍', kl: '#8A5A2B' };
+      const cnt = voteCount(it.votes);
+      const voters = it.votes ? Object.keys(it.votes) : [];
+      const mineOn = me && it.votes && it.votes[me];
+      const lead = !it.done && cnt > 0 && cnt === top;
+      let driveHtml = '';
+      if (!it.custom) {
+        if (it.dur != null) driveHtml = `<span class="drive">🚗 ${drives.est ? '~' : ''}${fmtDur(it.dur)}${it.dist != null ? ` · ${it.dist} km` : ''}</span>`;
+        else if (drives === null) driveHtml = `<span class="drive dim">afstand…</span>`;
+      }
+      const routeUrl = it.custom ? searchUrl(`${it.title} ${TRIP[idx].name}`) : mapsLink(it.poi.lat, it.poi.lng, it.poi.n);
+      const infoUrl = it.custom ? searchUrl(`${it.title} ${TRIP[idx].name} Italië`) : poiInfoUrl(it.poi, idx);
+      const editable = canEdit();
+      const heart = editable
+        ? `<button class="heart${mineOn ? ' on' : ''}" data-act="vote" data-i="${n}">${mineOn ? '❤' : '🤍'} <span class="cnt">${cnt}</span></button>`
+        : (cnt > 0 ? `<span class="heart static">❤ <span class="cnt">${cnt}</span></span>` : '');
+      const del = (it.custom && editable) ? `<button class="del" data-act="del" data-i="${n}" title="verwijderen">✕</button>` : '';
+      const doneBtn = editable ? `<button class="act done-btn${it.done ? ' on' : ''}" data-act="done" data-i="${n}">${it.done ? '✓ Gedaan' : 'Gedaan?'}</button>` : '';
+      const showNotes = editable || it.notes.length;
+      const notesBtn = showNotes ? `<button class="act" data-act="notes" data-i="${n}">💬 Verslag${it.notes.length ? ` (${it.notes.length})` : ''}</button>` : '';
+      const notesPanel = showNotes ? `<div class="notes">
+        ${it.notes.map(nt => `<div class="note"><b>${esc(nt.by)}</b> ${esc(nt.text)}</div>`).join('') || '<div class="note dim">Nog geen verslag — schrijf hoe het was.</div>'}
+        ${editable ? `<div class="addrow note-add"><input class="note-input" type="text" placeholder="Hoe was het?" /><button class="note-send" data-act="addnote" data-i="${n}">Plaats</button></div>` : ''}
+      </div>` : '';
+
+      const row = document.createElement('div'); row.className = 'poi' + (lead ? ' lead' : '') + (it.done ? ' done' : '');
+      row.style.animationDelay = (n * 0.03) + 's';
+      row.innerHTML =
+        `<div class="badge" style="--c:${cat.kl}">${cat.em}</div>
+         <div><div class="pn">${esc(it.title)}</div>${it.note ? `<div class="pc">${esc(it.note)}</div>` : ''}
+           ${driveHtml ? `<div class="poi-meta">${driveHtml}</div>` : ''}
+           ${voters.length ? `<div class="voters">👏 ${voters.map(esc).join(', ')}</div>` : ''}
+           <div class="poi-actions">
+             <a class="go" href="${routeUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Route</a>
+             <a class="go info" href="${infoUrl}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>
+             ${doneBtn}${notesBtn}
+           </div>
+           ${notesPanel}</div>
+         <div class="right">${heart}${del}</div>`;
+      if (!it.custom) row.onclick = (e) => { if (e.target.closest('a,button,input,.notes')) return; map.setView([it.poi.lat, it.poi.lng], 14); if (markers[it.j]) markers[it.j].openPopup(); document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-act="vote"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); voteItem(items[+b.dataset.i], idx); });
+    list.querySelectorAll('[data-act="del"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); const it = items[+b.dataset.i]; if (it.doc) removeItem(it.doc.id); });
+    list.querySelectorAll('[data-act="done"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); toggleDone(items[+b.dataset.i], idx); });
+    list.querySelectorAll('[data-act="notes"]').forEach(b => b.onclick = (e) => { e.stopPropagation(); b.closest('.poi').classList.toggle('open-notes'); });
+    list.querySelectorAll('[data-act="addnote"]').forEach(b => b.onclick = (e) => {
+      e.stopPropagation();
+      const inp = b.closest('.note-add').querySelector('.note-input');
+      const v = inp.value.trim(); if (v) { addNote(items[+b.dataset.i], idx, v); inp.value = ''; }
+    });
+
+    if (canEdit()) {
+      const add = document.createElement('div'); add.className = 'addrow';
+      add.innerHTML = `<input id="detail-input" type="text" placeholder="Eigen idee toevoegen…" /><button id="detail-add">Voeg toe</button>`;
+      list.appendChild(add);
+      const inp = add.querySelector('#detail-input');
+      const go = () => { const v = inp.value.trim(); if (v) { addActivity(v, 'stad', '', idx); inp.value = ''; } };
+      add.querySelector('#detail-add').onclick = go;
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+    } else if (firebaseReady && isGuest()) {
+      const note = document.createElement('div'); note.className = 'board-note';
+      note.innerHTML = `👀 Je kijkt mee als gast. Stemmen, afvinken en verslagjes zijn voor jou uitgeschakeld.`;
+      list.appendChild(note);
+    } else if (!firebaseReady) {
+      const note = document.createElement('div'); note.className = 'board-note';
+      note.innerHTML = `Stemmen, afvinken en verslagjes werken zodra de app aan Firebase gekoppeld is (zie README).`;
+      list.appendChild(note);
+    }
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+  // ---------- Vandaag: slim advies + programma ----------
+  function mergeItems(idx, docs) {
+    const pois = POIS[idx] || [];
+    const byTitle = {}; docs.forEach(dc => { byTitle[(dc.title || '').toLowerCase()] = dc; });
+    const poiTitles = new Set(pois.map(p => p.n.toLowerCase()));
+    let items = pois.map(p => { const dc = byTitle[p.n.toLowerCase()]; return { title: p.n, cat: p.cat, votes: dc ? voteCount(dc.votes) : 0, done: dc ? !!dc.done : false }; });
+    docs.filter(dc => !poiTitles.has((dc.title || '').toLowerCase())).forEach(dc => items.push({ title: dc.title, cat: dc.cat, votes: voteCount(dc.votes), done: !!dc.done }));
+    items.sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0) || b.votes - a.votes);
+    return items;
+  }
+
+  function initVandaag(state) {
+    if (state.phase === 'during') { vandaagStop = state.current; vandaagTeaser = false; }
+    else if (state.phase === 'before') { vandaagStop = 0; vandaagTeaser = true; }
+    else { vandaagStop = null; renderPlanner(); return; }
+
+    if (!vandaagTeaser) {
+      const t = new Date(); t.setDate(t.getDate() + 1);
+      const tomorrow = t.toISOString().slice(0, 10);
+      const s = TRIP[vandaagStop];
+      loadWeather(s.lat, s.lng, tomorrow)
+        .then(w => { vandaagWeather = (w && !w.outOfRange) ? w : null; renderPlanner(); })
+        .catch(() => { vandaagWeather = null; renderPlanner(); });
+    }
+    renderPlanner(); renderToday();
+
+    if (firebaseReady) {
+      if (vandaagUnsub) vandaagUnsub();
+      vandaagUnsub = db.collection('activities').where('trip', '==', TRIP_ID).where('stop', '==', vandaagStop)
+        .onSnapshot(snap => { vandaagDocs = snap.docs.map(dc => ({ id: dc.id, ...dc.data() })); renderPlanner(); renderToday(); }, () => {});
+    }
+  }
+
+  function renderPlanner() {
+    const box = document.getElementById('planner');
+    const where = document.getElementById('plan-where');
+    if (!box) return;
+    if (vandaagStop == null) { box.innerHTML = `<div class="advice muted"><div class="at">De reis zit erop 🇳🇱 — fijn dat jullie er waren!</div></div>`; where.textContent = ''; return; }
+    const stop = TRIP[vandaagStop]; where.textContent = stop.name;
+
+    if (vandaagTeaser) {
+      const dd = dayDiff(d(TRIP[0].start), today());
+      box.innerHTML = `<div class="advice muted"><div class="ah">Binnenkort</div><div class="at">Over ${dd} ${dd === 1 ? 'dag' : 'dagen'} begint de reis in ${esc(stop.name)}. Zodra jullie onderweg zijn, krijg je hier elke ochtend een weer-advies voor de volgende dag.</div></div>`;
+      return;
+    }
+    if (vandaagWeather === undefined) { box.innerHTML = `<div class="advice muted"><div class="at">Advies laden…</div></div>`; return; }
+
+    const items = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done);
+    let pref = null, msg;
+    const w = vandaagWeather;
+    if (!w) { msg = 'Geen weersverwachting beschikbaar — kies gerust je favoriet uit de lijst.'; }
+    else {
+      const rain = [51,53,55,61,63,65,80,81,82,95,96,99].includes(w.code);
+      const hot = w.max >= 32;
+      if (rain) { pref = ['grot','cultuur','stad']; msg = `Morgen kans op buien (${w.max}°). Mooie dag voor binnen: een grot, een stad of iets cultureels.`; }
+      else if (hot) { pref = ['strand','grot','natuur']; msg = `Morgen wordt het heet (${w.max}°). Kies verkoeling: het strand, een grot of schaduwrijke natuur.`; }
+      else { pref = ['strand','uitzicht','stad','natuur','cultuur']; msg = `Morgen ${w.max}°, ${wxInfo(w.code)[1]} — prima dag voor van alles.`; }
+    }
+    let pick = pref ? items.find(it => pref.includes(it.cat)) : null;
+    if (!pick) pick = items[0];
+    const claudeBtn = (typeof CLAUDE_PLANNER !== 'undefined' && CLAUDE_PLANNER && !isGuest())
+      ? `<button class="ask-claude" id="ask-claude">✨ Vraag Claude om advies</button>` : '';
+    box.innerHTML = `<div class="advice"><div class="ah">Advies voor morgen</div><div class="at">${esc(msg)}</div>${pick ? `<div class="pick" id="advice-pick">${(CATS[pick.cat] || {}).em || '📍'} ${esc(pick.title)} →</div>` : ''}${claudeBtn}</div><div id="claude-out"></div>`;
+    if (pick) document.getElementById('advice-pick').onclick = () => openDestination(vandaagStop);
+    if (claudeBtn) document.getElementById('ask-claude').onclick = askClaude;
+  }
+
+  async function askClaude() {
+    const out = document.getElementById('claude-out');
+    const btn = document.getElementById('ask-claude');
+    if (!out || vandaagStop == null) return;
+    out.innerHTML = `<div class="claude-box">Claude denkt na…</div>`;
+    if (btn) btn.disabled = true;
+    const stop = TRIP[vandaagStop];
+    const w = vandaagWeather;
+    const activities = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done).slice(0, 8)
+      .map(it => ({ title: it.title, cat: it.cat, votes: it.votes }));
+    try {
+      const res = await fetch('/api/plan', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ place: stop.name, dateLabel: 'morgen', weather: w ? { max: w.max, min: w.min, desc: wxInfo(w.code)[1] } : null, activities })
+      });
+      const data = await res.json();
+      if (data && data.advice) out.innerHTML = `<div class="claude-box"><div class="cb-h">✨ Claude's advies</div>${esc(data.advice)}</div>`;
+      else throw new Error('leeg');
+    } catch (e) {
+      out.innerHTML = `<div class="claude-box err">Het Claude-advies lukte niet. Staan de Vercel-functie en de ANTHROPIC_API_KEY goed ingesteld? (Zie README, "AI-planner".)</div>`;
+    }
+    if (btn) btn.disabled = false;
+  }
+
+  function renderToday() {
+    const head = document.getElementById('today-head');
+    const list = document.getElementById('today-list');
+    if (!list || vandaagStop == null) { if (head) head.style.display = 'none'; if (list) list.innerHTML = ''; return; }
+    const items = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done).slice(0, 5);
+    head.querySelector('h2').textContent = vandaagTeaser ? 'Alvast kiezen' : 'Op het programma';
+    head.style.display = items.length ? 'flex' : 'none';
+    list.innerHTML = items.map(it =>
+      `<div class="poi"><div class="badge" style="--c:${(CATS[it.cat] || {}).kl || '#8A5A2B'}">${(CATS[it.cat] || {}).em || '📍'}</div>
+        <div><div class="pn">${esc(it.title)}</div>${it.votes ? `<div class="voters">❤ ${it.votes}</div>` : ''}</div>
+        <div class="right"><span class="chev">›</span></div></div>`).join('');
+    list.querySelectorAll('.poi').forEach(r => r.onclick = () => openDestination(vandaagStop));
+  }
+
+  // ---------- Thema (dag/nacht) ----------
+  function updateThemeBtn() { const b = document.getElementById('theme-toggle'); if (b) b.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙'; }
+  function applyTheme() { if (lsGet('reisgids-theme') === 'dark') document.body.classList.add('dark'); updateThemeBtn(); }
+
+  // ---------- Foto's-tab (Google Foto's gedeeld album) ----------
+  function renderFotos() {
+    const url = (typeof GOOGLE_PHOTOS_ALBUM_URL !== 'undefined') ? GOOGLE_PHOTOS_ALBUM_URL : '';
+    const body = document.getElementById('fotos-body');
+    if (!body) return;
+    if (url) {
+      body.innerHTML =
+        `<div class="fotos-card">
+           <div class="fotos-ico">📷</div>
+           <div class="fotos-t">Onze reisfoto's</div>
+           <div class="fotos-s">Bekijk en voeg foto's toe in ons gedeelde Google Foto's-album — iedereen met de link kan meedoen.</div>
+           <a class="fotos-btn" href="${url}" target="_blank" rel="noopener">Open in Google Foto's</a>
+         </div>
+         <div class="fotos-tip">Tip: voeg foto's toe vanuit de Google Foto's-app op je telefoon (knop “Toevoegen”). Ze verschijnen dan voor iedereen.</div>`;
+    } else {
+      body.innerHTML =
+        `<div class="board-note"><b>Nog in te stellen.</b> Maak in Google Foto's een gedeeld album, kopieer de deel-link
+         en zet die in <b>config.js</b> bij <b>GOOGLE_PHOTOS_ALBUM_URL</b>. Daarna verschijnt hier de knop naar jullie album. (Zie README, "Foto's".)</div>`;
+    }
+  }
+
+  // ---------- Tabbladen ----------
+  function showTab(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'p-' + name));
+    document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    window.scrollTo({ top: 0 });
+    if (name === 'detail' && map) {
+      setTimeout(() => { map.invalidateSize(); selectStop(currentMapStop); }, 60);
+    }
+    if (name === 'route') {
+      setTimeout(refreshRouteMap, 60);
+    }
+  }
+
+  // ---------- Opstarten ----------
+  function init() {
+    const state = computeState();
+    document.getElementById('trip-range').textContent = `${fmtShort(d(TRIP[0].start))} – ${fmtShort(d(TRIP[TRIP.length-1].end))}`;
+    const heroTarget = renderHero(state);
+    renderStops(state);
+    fillStopWeather();
+    fillLegs();
+    fillHeroWeather(heroTarget);
+    initMap(state);
+    initRouteMap();
+    initData();
+    renderFotos();
+    initVandaag(state);
+    document.getElementById('theme-toggle').onclick = () => {
+      document.body.classList.toggle('dark');
+      lsSet('reisgids-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+      updateThemeBtn();
+    };
+    document.querySelectorAll('#tabbar button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+    document.getElementById('detail-back').onclick = () => showTab('route');
+
+    if (me) {
+      document.getElementById('userbar-name').textContent = me;
+      document.getElementById('userbar').style.display = 'flex';
+    }
+    document.getElementById('userbar-logout').onclick = () => {
+      try { localStorage.removeItem('reisgids-me'); localStorage.removeItem('reisgids-unlock'); } catch (e) {}
+      location.reload();
+    };
+  }
+
+  // ---------- Login (naam + gezinscode) ----------
+  function storedMe() { const m = lsGet('reisgids-me'); return (m && (FAMILY.indexOf(m) > -1 || m === GUEST_NAME)) ? m : null; }
+  function codeOk() { return !ACCESS_CODE || lsGet('reisgids-unlock') === ACCESS_CODE; }
+  function appUnlocked() { return !!storedMe() && codeOk(); }
+  let booted = false;
+  function boot() { if (booted) return; booted = true; applyTheme(); init(); }
+  function gate() {
+    const lock = document.getElementById('lock');
+    if (appUnlocked()) { me = storedMe(); lock.classList.add('hide'); boot(); return; }
+
+    let picked = storedMe();
+    const pick = document.getElementById('who-pick');
+    function renderPick() {
+      pick.innerHTML = FAMILY.map(n => `<button type="button" class="who${n === picked ? ' me' : ''}" data-n="${n}">${n}</button>`).join('')
+        + `<button type="button" class="who guest${picked === GUEST_NAME ? ' me' : ''}" data-n="${GUEST_NAME}">👀 Gast — alleen kijken</button>`;
+      pick.querySelectorAll('.who').forEach(b => b.onclick = () => { picked = b.dataset.n; renderPick(); });
+    }
+    renderPick();
+
+    const inp = document.getElementById('lock-input');
+    const err = document.getElementById('lock-err');
+    const card = lock.querySelector('.lock-card');
+    if (!ACCESS_CODE) inp.style.display = 'none';
+
+    function tryLogin() {
+      if (!picked) { err.textContent = 'Kies eerst je naam.'; return; }
+      if (ACCESS_CODE && inp.value !== ACCESS_CODE) {
+        err.textContent = 'Onjuiste gezinscode.';
+        card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+        inp.select(); return;
+      }
+      me = picked; lsSet('reisgids-me', me);
+      if (ACCESS_CODE) lsSet('reisgids-unlock', ACCESS_CODE);
+      lock.classList.add('hide'); boot();
+    }
+    document.getElementById('lock-btn').onclick = tryLogin;
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(); });
+  }
+  gate();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
+  </script>
+</body>
+</html>
