@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v22 (versienummer zichtbaar in de userbar).
-const CACHE = 'reisgids-v22';
+// Versie opgehoogd naar v23 (Masseria Vaccaro toegevoegd als 6e Puglia-stop).
+const CACHE = 'reisgids-v23';
 const SHELL = [
   './',
   './index.html',

@@ -426,14 +426,15 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
-  const APP_VERSION = 'v22'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
+  const APP_VERSION = 'v23'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
     { name: 'Rome',                 accom: 'Aankomst & stad',         start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
     { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
     { name: 'Matera',               accom: '5 Elementi Sassi',        start: '2026-07-30', end: '2026-07-31', lat: 40.6664, lng: 16.6043 },
     { name: 'Giurdignano',          accom: 'Agriturismo Il Megalite', start: '2026-07-31', end: '2026-08-03', lat: 40.1486, lng: 18.3486 },
     { name: 'Alliste (Salento)',    accom: 'Masseria Cisternella',    start: '2026-08-03', end: '2026-08-07', lat: 39.9447, lng: 18.0847 },
-    { name: 'Monopoli',             accom: 'Masseria Santa Teresa',   start: '2026-08-07', end: '2026-08-11', lat: 40.9543, lng: 17.2967 },
+    { name: 'Ostuni & Valle d\'Itria', accom: 'Masseria Vaccaro',       start: '2026-08-07', end: '2026-08-09', lat: 40.6100, lng: 17.8050, addr: 'Masseria Vaccaro, Mesagne BR' },
+    { name: 'Monopoli',             accom: 'Masseria Santa Teresa',   start: '2026-08-09', end: '2026-08-11', lat: 40.9543, lng: 17.2967 },
     { name: 'Napels (omgeving)',    accom: 'Twee dagen in de buurt',  start: '2026-08-11', end: '2026-08-13', lat: 40.8518, lng: 14.2681 },
     { name: 'Rome → Amsterdam',     accom: 'Terugreis & vlucht',      start: '2026-08-13', end: '2026-08-13', lat: 41.9028, lng: 12.4964 }
   ];
@@ -508,29 +509,39 @@
       { n: 'Caffè Parisi (Nardò)', cat: 'eten', lat: 40.1790, lng: 18.0335, note: 'Espresso of cappuccino met een pasticciotto op het terras aan Piazza Salandra.' },
       { n: 'Clantò / Antico Monastero (Felline)', cat: 'eten', lat: 39.9400, lng: 18.1000, note: 'Leuke restaurantjes vlak bij Masseria Cisternella.' }
     ],
-    [ // 5 Monopoli / Valle d'Itria (gids dag 13-16: Ostuni, Monopoli, Polignano, Bari, trulli)
+    [ // 5 Ostuni & Valle d'Itria (Masseria Vaccaro — gids dag 13-14)
       { n: 'Ostuni — la città bianca', cat: 'stad', lat: 40.7300, lng: 17.5770, note: 'De witte stad op een heuvel: doolhof van trappen en gekalkte muren, Cattedrale, de Arco di Scoppa en het fotoplekje Via Brancasi.' },
-      { n: 'Monopoli — Porto Antico', cat: 'stad', lat: 40.9510, lng: 17.3010, note: 'Oude haven met de karakteristieke blauwe gozzi-bootjes; mooie binnenstad. Parkeer gratis, ~15 min lopen.' },
-      { n: 'Castello Carlo V & Cala Porta Vecchia', cat: 'strand', lat: 40.9530, lng: 17.3000, note: 'Spaans kasteel aan zee + het stadsstrandje Cala Porta Vecchia voor een korte duik.' },
-      { n: 'Polignano a Mare — Lama Monachile', cat: 'uitzicht', lat: 40.9960, lng: 17.2180, note: 'Beroemd kiezelstrandje tussen de kliffen. Kom vroeg, het vult zich snel. Het stadje hangt spectaculair boven zee.' },
-      { n: 'Grotta Palazzese (Polignano)', cat: 'uitzicht', lat: 40.9940, lng: 17.2240, note: 'Bezoek het voor het spectaculaire uitzicht, maar eet er niet (duur en tegenvallend). Leuk alternatief: Grotta Ardito op het dak.' },
       { n: 'Alberobello — trulli', cat: 'cultuur', lat: 40.7830, lng: 17.2370, note: 'UNESCO trulli-stad. Ga vroeg, vóór de drukte. Rione Monti voor de foto\'s, Aia Piccola voor het echte dorpsleven. Trullo Sovrano €2,50.' },
       { n: 'Locorotondo', cat: 'uitzicht', lat: 40.7550, lng: 17.3270, note: 'Witte "ronde" stad op een heuvel met puntdaken (cummerse). Sluit af met een glas Locorotondo DOC.' },
       { n: 'Cisternino', cat: 'stad', lat: 40.7430, lng: 17.4260, note: 'Wit dorp in de Valle d\'Itria. Beleef de fornelli pronti: kies bombette (vleesrolletjes) en laat ze ter plekke grillen.' },
+      { n: 'Martina Franca — Palazzo Ducale', cat: 'stad', lat: 40.7030, lng: 17.3380, note: 'Elegante witte barokstad; via Porta Santo Stefano naar Palazzo Ducale en Piazza Plebiscito met de Basilica di San Martino.' },
       { n: 'Grotte di Castellana', cat: 'grot', lat: 40.8810, lng: 17.1480, note: 'Spectaculaire druipsteengrotten — heerlijk koel op hete dagen.' },
+      { n: 'Torre Guaceto (reservaat & strand)', cat: 'natuur', lat: 40.7170, lng: 17.7950, note: 'Beschermd zeereservaat op ~10 min van de masseria: duinen, helder water en mooie stranden. Kom vroeg, toegang en parkeren zijn beperkt.' },
+      { n: 'Trattoria Fave e Fogghje (Ostuni)', cat: 'eten', lat: 40.7305, lng: 17.5765, note: 'Orecchiette met cime di rapa en burrata — pure smaken uit Puglia.' },
+      { n: 'Al Posto Affianco (Ostuni)', cat: 'eten', lat: 40.7300, lng: 17.5775, note: 'Sfeervol adresje midden in het oude centrum van Ostuni.' },
+      { n: 'La Pagnottella (Alberobello)', cat: 'eten', lat: 40.7825, lng: 17.2375, note: 'Het beroemde broodje Pasqualino: tonijn, kappertjes, salami en provola.' },
+      { n: 'Bel Sit (Locorotondo)', cat: 'eten', lat: 40.7545, lng: 17.3275, note: 'Aperitivo met uitzicht over de wijngaarden en trulli van de vallei.' }
+    ],
+    [ // 6 Monopoli (Masseria Santa Teresa — gids dag 15-16)
+      { n: 'Monopoli — Porto Antico', cat: 'stad', lat: 40.9510, lng: 17.3010, note: 'Oude haven met de karakteristieke blauwe gozzi-bootjes; mooie binnenstad. Parkeer gratis, ~15 min lopen.' },
+      { n: 'Castello Carlo V & Cala Porta Vecchia', cat: 'strand', lat: 40.9530, lng: 17.3000, note: 'Spaans kasteel aan zee + het stadsstrandje Cala Porta Vecchia voor een korte duik.' },
+      { n: 'Cattedrale della Madia (Monopoli)', cat: 'cultuur', lat: 40.9525, lng: 17.3015, note: 'Barokke kathedraal; volgens de legende spoelde hier een icoon van Maria aan met precies de balken voor het dak.' },
+      { n: 'Polignano a Mare — Lama Monachile', cat: 'uitzicht', lat: 40.9960, lng: 17.2180, note: 'Beroemd kiezelstrandje tussen de kliffen. Kom vroeg, het vult zich snel. Het stadje hangt spectaculair boven zee.' },
+      { n: 'Polignano — centro storico & Modugno', cat: 'stad', lat: 40.9955, lng: 17.2210, note: 'Witte steegjes met poëzie op de muren en het standbeeld van Domenico Modugno (Volare).' },
+      { n: 'Grotta Palazzese (Polignano)', cat: 'uitzicht', lat: 40.9940, lng: 17.2240, note: 'Bezoek het voor het spectaculaire uitzicht, maar eet er niet (duur en tegenvallend). Leuk alternatief: Grotta Ardito op het dak.' },
+      { n: 'Stranden Capitolo & Tre Buchi', cat: 'strand', lat: 40.9300, lng: 17.3500, note: 'Mooie baaien met kristalhelder water ten zuiden van Monopoli. Lido-tip: Lido Belli Freschi.' },
       { n: 'Bari Vecchia & Basilica di San Nicola', cat: 'cultuur', lat: 41.1300, lng: 16.8690, note: 'Oud hart van Bari: de Via delle Orecchiette waar vrouwen pasta draaien, en de basiliek waar Sint-Nicolaas (onze Sinterklaas) ligt. Proef focaccia barese.' },
       { n: 'La Locanda dei Mercanti (Monopoli)', cat: 'eten', lat: 40.9512, lng: 17.3012, note: 'Verse pasta met zeevruchten in Monopoli (ook The King Street Food is een favoriet).' },
-      { n: 'Trattoria Fave e Fogghje (Ostuni)', cat: 'eten', lat: 40.7305, lng: 17.5765, note: 'Orecchiette met cime di rapa en burrata — pure smaken uit Puglia.' },
       { n: 'Il Super Mago del Gelo (Polignano)', cat: 'eten', lat: 40.9960, lng: 17.2210, note: 'Sluit de dag af met een caffè speciale: koffie, amandellikeur, citroenrasp en slagroom. Uniek voor Polignano.' }
     ],
-    [ // 6 Napels
+    [ // 7 Napels
       { n: 'Pompeii', cat: 'cultuur', lat: 40.7497, lng: 14.4869, note: 'De stad die de Vesuvius bedolf — neem water en petjes mee.' },
       { n: 'Vesuvius', cat: 'natuur', lat: 40.8210, lng: 14.4260, note: 'Wandel naar de krater; uitzicht over de baai.' },
       { n: 'Napels — centro storico', cat: 'eten', lat: 40.8500, lng: 14.2600, note: 'Bakermat van de pizza — proef een echte Margherita.' },
       { n: 'Herculaneum', cat: 'cultuur', lat: 40.8060, lng: 14.3480, note: 'Beter bewaard en compacter dan Pompeii.' },
       { n: 'Sorrento & kust', cat: 'uitzicht', lat: 40.6260, lng: 14.3760, note: 'Mooie kuststad als opstap naar de Amalfikust.' }
     ],
-    [] // 7 Rome -> Amsterdam (reisdag, geen plekken)
+    [] // 8 Rome -> Amsterdam (reisdag, geen plekken)
   ];
 
   // ----------------------------------------------------------------------
@@ -558,13 +569,19 @@
       '⚠️ ZTL: Nardò en Specchia hebben camera-bewaakte zones; parkeer aan de rand.',
       '🅿️ Porto Selvaggio: parkeer bij de pineta (~€5/dag), dan 15-20 min lopen of de shuttle (€2,50 p.p.).'
     ],
-    [ // 5 Monopoli / Valle d'Itria
+    [ // 5 Ostuni & Valle d'Itria (Masseria Vaccaro)
       '🅿️ Ostuni: parkeren is van 15 jun–15 sep betaald van 9:00–02:00 (€0,80/u; 21:00–02:00 €1,70/u).',
       '⏰ Alberobello: ga vroeg in de ochtend, vóór de drukte losbarst.',
-      '🍦 Polignano: bezoek Grotta Palazzese wél voor het uitzicht, maar eet er niet (duur/tegenvallend) — alternatief Grotta Ardito.'
+      '🏖️ Torre Guaceto: beschermd natuurreservaat met mooie stranden op ~10 min van de masseria — kom vroeg, toegang/parkeren zijn beperkt.',
+      '🍷 Locorotondo: proef de lokale witte wijn, Locorotondo DOC.'
     ],
-    [], // 6 Napels
-    []  // 7 reisdag
+    [ // 6 Monopoli (Masseria Santa Teresa)
+      '🅿️ Monopoli: parkeer gratis op ~15 min lopen van het oude centrum.',
+      '🍦 Polignano: bezoek Grotta Palazzese wél voor het uitzicht, maar eet er niet (duur/tegenvallend) — alternatief Grotta Ardito.',
+      '🏖️ Mooiste stranden bij Monopoli: Capitolo en Tre Buchi (helder water); lido-tip: Lido Belli Freschi.'
+    ],
+    [], // 7 Napels
+    []  // 8 reisdag
   ];
 
   const CATS = {
@@ -925,6 +942,7 @@
     { g: 'linear-gradient(150deg,#7a6a52,#534734)', em: '🪨' },
     { g: 'linear-gradient(150deg,#2E9BB0,#1f7585)', em: '🐚' },
     { g: 'linear-gradient(150deg,#1FA6B8,#15808f)', em: '🏖️' },
+    { g: 'linear-gradient(150deg,#9A8C3A,#6f6326)', em: '🫒' },
     { g: 'linear-gradient(150deg,#3E7C8C,#2b5a66)', em: '⛵' },
     { g: 'linear-gradient(150deg,#C0492E,#8f3320)', em: '🌋' },
     { g: 'linear-gradient(150deg,#8A5A2B,#5f3c1c)', em: '🧳' }
