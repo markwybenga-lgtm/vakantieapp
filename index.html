@@ -43,6 +43,7 @@
     .panel.active { display: block; animation: fadeIn 0.25s ease; }
     .userbar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 2px 0; font-size: 12.5px; color: var(--ink-soft); }
     .userbar b { color: var(--ink); }
+    .userbar .ver { font-size: 11px; opacity: 0.5; font-variant-numeric: tabular-nums; }
     .userbar b::before { content: '👤 '; font-weight: 400; }
     .userbar button { background: none; border: none; color: var(--sea); font-family: inherit; font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -311,6 +312,7 @@
   <div class="wrap">
     <div class="userbar" id="userbar" style="display:none">
       <span>Ingelogd als <b id="userbar-name"></b></span>
+      <span class="ver" id="app-ver"></span>
       <button id="theme-toggle" title="dag/nacht">🌙</button>
       <button id="userbar-logout">uitloggen</button>
     </div>
@@ -424,6 +426,7 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
+  const APP_VERSION = 'v22'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
     { name: 'Rome',                 accom: 'Aankomst & stad',         start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
     { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
@@ -1313,6 +1316,7 @@
 
     if (me) {
       document.getElementById('userbar-name').textContent = me;
+      document.getElementById('app-ver').textContent = APP_VERSION;
       document.getElementById('userbar').style.display = 'flex';
     }
     document.getElementById('userbar-logout').onclick = () => {
