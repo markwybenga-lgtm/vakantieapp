@@ -44,6 +44,12 @@
     .userbar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding: 12px 2px 0; font-size: 12.5px; color: var(--ink-soft); }
     .userbar b { color: var(--ink); }
     .userbar .ver { font-size: 11px; opacity: 0.5; font-variant-numeric: tabular-nums; }
+    .region-banner { position: relative; height: 178px; border-radius: 18px; overflow: hidden; margin: 14px 0 2px; background: var(--paper-2); box-shadow: var(--shadow); }
+    .region-banner .rb-img { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; transition: opacity 1.1s ease; transform: scale(1.04); }
+    .region-banner .rb-img.show { opacity: 1; }
+    .region-banner .rb-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to top, rgba(20,12,6,0.55), rgba(20,12,6,0.05) 48%, rgba(20,12,6,0) 70%); }
+    .region-banner .rb-cap { position: absolute; left: 15px; bottom: 12px; right: 15px; color: #fff; font-weight: 700; font-size: 14.5px; letter-spacing: 0.01em; text-shadow: 0 1px 6px rgba(0,0,0,0.55); }
+    .region-banner .rb-cap::before { content: '📍 '; font-weight: 400; }
     .userbar b::before { content: '👤 '; font-weight: 400; }
     .userbar button { background: none; border: none; color: var(--sea); font-family: inherit; font-size: 12.5px; cursor: pointer; text-decoration: underline; padding: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -320,8 +326,15 @@
     <header>
       <div class="kicker">Zomer 2026 · Familiereis</div>
       <h1 class="title">Bella <em>Italia</em></h1>
-      <div class="route">Rome → Gargano → Matera → Salento → Monopoli → Napels → terug</div>
+      <div class="route">Rome → Gargano → Matera → Salento → Valle d'Itria → Monopoli → Napels → terug</div>
     </header>
+
+    <div class="region-banner" id="region-banner" style="display:none">
+      <div class="rb-img" id="rb-a"></div>
+      <div class="rb-img" id="rb-b"></div>
+      <div class="rb-shade"></div>
+      <div class="rb-cap" id="rb-cap"></div>
+    </div>
 
     <section class="hero" id="hero">
       <div class="label">Vandaag</div>
@@ -426,7 +439,7 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
-  const APP_VERSION = 'v23'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
+  const APP_VERSION = 'v24'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
     { name: 'Rome',                 accom: 'Aankomst & stad',         start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
     { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
@@ -1298,6 +1311,85 @@
   }
 
   // ---------- Tabbladen ----------
+  // ---------- Regio-fotobanner (Vandaag) ----------
+  const REGION_PAGES = [
+    ['Polignano a Mare', 'Polignano a Mare'],
+    ['Alberobello', 'Alberobello — trulli'],
+    ['Ostuni', 'Ostuni — la città bianca'],
+    ['Gallipoli, Apulia', 'Gallipoli'],
+    ['Vieste', 'Vieste — Gargano'],
+    ['Otranto', 'Otranto'],
+    ['Monopoli', 'Monopoli'],
+    ['Lecce', 'Lecce'],
+    ['Matera', 'Matera — Sassi'],
+    ['Locorotondo', 'Locorotondo'],
+    ['Martina Franca', 'Martina Franca'],
+    ['Trani', 'Trani'],
+    ['Santa Maria di Leuca', 'Santa Maria di Leuca']
+  ];
+  let rbPool = [], rbLayers = null, rbActive = 0, rbIdx = 0, rbTimer = null;
+
+  function rbHiRes(d) {
+    const t = d && d.thumbnail, o = d && d.originalimage;
+    if (!t || !t.source) return null;
+    const ow = (o && o.width) ? o.width : 1280;
+    const w = Math.min(1280, ow);
+    return t.source.replace(/\/(\d+)px-([^/]+)$/, '/' + w + 'px-$2');
+  }
+  function rbOk(u) { return u && !/\.svg(\?|$)/i.test(u) && !/(Coat_of_arms|Stemma|Location_map|locator|_map_)/i.test(u); }
+
+  function rbApply(i) {
+    if (!rbLayers) rbLayers = [document.getElementById('rb-a'), document.getElementById('rb-b')];
+    const ph = rbPool[i]; if (!ph || !rbLayers[0]) return;
+    const cur = rbLayers[rbActive], nxt = rbLayers[1 - rbActive];
+    const im = new Image();
+    im.onload = () => {
+      nxt.style.backgroundImage = 'url("' + ph.img + '")';
+      nxt.classList.add('show'); cur.classList.remove('show'); rbActive = 1 - rbActive;
+      const cap = document.getElementById('rb-cap'); if (cap) cap.textContent = ph.cap;
+    };
+    im.onerror = () => {
+      rbPool.splice(i, 1);
+      if (rbPool.length) rbApply(i % rbPool.length);
+      else { const b = document.getElementById('region-banner'); if (b) b.style.display = 'none'; }
+    };
+    im.src = ph.img;
+  }
+  function rbStart() {
+    if (!rbPool.length) return;
+    const b = document.getElementById('region-banner'); if (b) b.style.display = '';
+    for (let k = rbPool.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [rbPool[k], rbPool[j]] = [rbPool[j], rbPool[k]]; }
+    rbIdx = 0; rbApply(0);
+    clearInterval(rbTimer);
+    if (rbPool.length > 1) rbTimer = setInterval(() => { rbIdx = (rbIdx + 1) % rbPool.length; rbApply(rbIdx); }, 5200);
+  }
+  function rbStop() { clearInterval(rbTimer); rbTimer = null; }
+  function rbVandaagActive() { const p = document.getElementById('p-vandaag'); return p && p.classList.contains('active'); }
+
+  async function rbFetch(title) {
+    try {
+      const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title), { headers: { Accept: 'application/json' } });
+      if (!r.ok) return null;
+      const d = await r.json();
+      const img = rbHiRes(d);
+      if (!rbOk(img)) return null;
+      const o = d.originalimage;
+      if (o && o.width && o.height && o.height > o.width * 1.5) return null;
+      return img;
+    } catch (e) { return null; }
+  }
+  async function loadRegionPhotos() {
+    try { const c = lsGet('reisgids-photos'); if (c) { const arr = JSON.parse(c); if (Array.isArray(arr) && arr.length) { rbPool = arr; if (rbVandaagActive()) rbStart(); } } } catch (e) {}
+    const res = await Promise.all(REGION_PAGES.map(async p => { const img = await rbFetch(p[0]); return img ? { img, cap: p[1] } : null; }));
+    const fresh = res.filter(Boolean);
+    if (fresh.length >= 4) {
+      const wasRunning = !!rbTimer;
+      rbPool = fresh;
+      try { lsSet('reisgids-photos', JSON.stringify(fresh)); } catch (e) {}
+      if (rbVandaagActive() && !wasRunning) rbStart();
+    }
+  }
+
   function showTab(name) {
     document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'p-' + name));
     document.querySelectorAll('#tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
@@ -1308,6 +1400,7 @@
     if (name === 'route') {
       setTimeout(refreshRouteMap, 60);
     }
+    if (name === 'vandaag') rbStart(); else rbStop();
   }
 
   // ---------- Opstarten ----------
@@ -1324,6 +1417,7 @@
     initData();
     renderFotos();
     initVandaag(state);
+    loadRegionPhotos();
     document.getElementById('theme-toggle').onclick = () => {
       document.body.classList.toggle('dark');
       lsSet('reisgids-theme', document.body.classList.contains('dark') ? 'dark' : 'light');

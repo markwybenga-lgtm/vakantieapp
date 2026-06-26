@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v23 (Masseria Vaccaro toegevoegd als 6e Puglia-stop).
-const CACHE = 'reisgids-v23';
+// Versie opgehoogd naar v24 (wisselende regio-fotobanner op Vandaag).
+const CACHE = 'reisgids-v24';
 const SHELL = [
   './',
   './index.html',
@@ -33,7 +33,9 @@ self.addEventListener('fetch', (e) => {
       url.hostname.includes('router.project-osrm.org') ||
       url.hostname.includes('gstatic.com') ||
       url.hostname.includes('googleapis.com') ||
-      url.hostname.includes('firebaseio.com')) {
+      url.hostname.includes('firebaseio.com') ||
+      url.hostname.includes('wikipedia.org') ||
+      url.hostname.includes('wikimedia.org')) {
     e.respondWith(fetch(e.request).catch(() => new Response('', { status: 504 })));
     return;
   }
