@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v24 (wisselende regio-fotobanner op Vandaag).
-const CACHE = 'reisgids-v24';
+// Versie opgehoogd naar v27 (Airbnb Rome accommodatie toegevoegd).
+const CACHE = 'reisgids-v27';
 const SHELL = [
   './',
   './index.html',

@@ -439,9 +439,9 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
-  const APP_VERSION = 'v24'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
+  const APP_VERSION = 'v27'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
-    { name: 'Rome',                 accom: 'Aankomst & stad',         start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
+    { name: 'Rome',                 accom: 'Luxury Suites & Apartments B', addr: 'Via Genova 24, Roma', start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
     { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
     { name: 'Matera',               accom: '5 Elementi Sassi',        start: '2026-07-30', end: '2026-07-31', lat: 40.6664, lng: 16.6043 },
     { name: 'Giurdignano',          accom: 'Agriturismo Il Megalite', start: '2026-07-31', end: '2026-08-03', lat: 40.1486, lng: 18.3486 },
@@ -458,6 +458,8 @@
   // ----------------------------------------------------------------------
   const POIS = [
     [ // 0 Rome
+      { n: 'Rome Private Bike Tour (geboekt)', cat: 'fiets', lat: 41.8989, lng: 12.4945, note: 'Geboekt! Zaterdag 25 juli, 14:00 uur (wees 15 min vooraf aanwezig). Verzamelen: Via del Viminale 5. Voor 4 personen, Engelstalig. Baja Bikes, uitgevoerd door Bici and Baci. Boeking PEBIB1167204. Tel: 0039 0694539240.', url: 'https://www.google.com/maps/search/?api=1&query=Via%20del%20Viminale%205%2C%20Roma' },
+      { n: 'Colosseum, Forum & Palatijn (geboekt)', cat: 'cultuur', lat: 41.8905, lng: 12.4918, note: 'Geboekt! Zondag 26 juli — toegang Colosseum om 10:00 uur, met audiogids-app. Incl. Forum Romanum & Palatijn. 2 volwassenen + 2 kinderen. Mobiel ticket (opslaan op telefoon). Referentiepunt: L.go Gaetana Agnesi 1. Viator-boeking 1416153973 · operator getitalytours (+39 350 852 6254).', url: 'https://www.google.com/maps/search/?api=1&query=Largo%20Gaetana%20Agnesi%201%2C%20Roma' },
       { n: 'Colosseum', cat: 'cultuur', lat: 41.8902, lng: 12.4922, note: 'Het iconische amfitheater — tickets vooraf om de rij te skippen.' },
       { n: 'Vaticaan & Sint-Pieter', cat: 'cultuur', lat: 41.9022, lng: 12.4539, note: 'Basiliek en musea; ga vroeg, het wordt warm en druk.' },
       { n: 'Trevifontein', cat: 'uitzicht', lat: 41.9009, lng: 12.4833, note: 'Muntje gooien verplicht — vroeg in de ochtend het rustigst.' },
@@ -561,7 +563,11 @@
   //  GOED OM TE WETEN per stop (praktische tips uit de reisgids).
   // ----------------------------------------------------------------------
   const TIPS = [
-    [], // 0 Rome
+    [ // 0 Rome
+      '🏠 Verblijf — Luxury Suites & Apartments B (Airbnb), Via Genova 24 (00184 Rome). Host: Teresa, +39 392 058 7493. Check-in vr 24 juli na 13:00, check-out zo 26 juli vóór 10:00. Bevestigingscode HMEHYFFFBR. Let op: host vraagt om paspoort-/ID-gegevens (verplichte gastenregistratie in Italië).',
+      '🚲 Geboekt — Rome Private Bike Tour (Baja Bikes): za 25 juli, 14:00 uur. Verzamelen op Via del Viminale 5; wees er 15 min vóór 14:00. 4 personen, Engelstalig. Boeking PEBIB1167204 · tel. 0039 0694539240.',
+      '🎟️ Geboekt — Colosseum, Forum Romanum & Palatijn (Viator): zo 26 juli, toegang 10:00 uur, met audiogids-app. 2 volw. + 2 kinderen. Mobiel ticket op de telefoon bewaren. Boeking 1416153973 · let op: niet-restitueerbaar.'
+    ],
     [ // 1 Mattinata / Gargano
       '⚠️ ZTL: rij de oude centra van Vieste en Peschici niet in (boetes). Parkeer aan de rand en loop het laatste stuk.',
       '🅿️ Vieste: parkeren aan de rand kan voor €1 per uur of €5 totaal.',
@@ -605,7 +611,8 @@
     uitzicht: { em: '🌅', kl: '#C98A2B', label: 'uitzicht' },
     natuur:   { em: '🌳', kl: '#5E7D3A', label: 'natuur' },
     eten:     { em: '🍝', kl: '#B0432E', label: 'eten' },
-    boot:     { em: '⛵', kl: '#2E7D9E', label: 'boottocht' }
+    boot:     { em: '⛵', kl: '#2E7D9E', label: 'boottocht' },
+    fiets:    { em: '🚲', kl: '#C77F2E', label: 'fietstour' }
   };
 
   // ---------- Datum-helpers (Nederlands) ----------
