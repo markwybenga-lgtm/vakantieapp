@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v27 (Airbnb Rome accommodatie toegevoegd).
-const CACHE = 'reisgids-v27';
+// Versie opgehoogd naar v28 (toegangscode nu gehasht i.p.v. plaintext).
+const CACHE = 'reisgids-v28';
 const SHELL = [
   './',
   './index.html',

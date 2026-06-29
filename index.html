@@ -439,7 +439,7 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
-  const APP_VERSION = 'v27'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
+  const APP_VERSION = 'v28'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
     { name: 'Rome',                 accom: 'Luxury Suites & Apartments B', addr: 'Via Genova 24, Roma', start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
     { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
@@ -1445,8 +1445,23 @@
   }
 
   // ---------- Login (naam + gezinscode) ----------
+  // Veiliger: we vergelijken een SHA-256-hash i.p.v. de letterlijke code.
+  // config.js mag ACCESS_CODE_HASH (aanbevolen) of nog de oude ACCESS_CODE (plaintext) bevatten.
+  const ACCESS_HASH = (typeof ACCESS_CODE_HASH !== 'undefined' && ACCESS_CODE_HASH) ? String(ACCESS_CODE_HASH).toLowerCase() : null;
+  const ACCESS_PLAIN = (typeof ACCESS_CODE !== 'undefined' && ACCESS_CODE) ? ACCESS_CODE : null;
+  function lockActive() { return !!ACCESS_HASH || !!ACCESS_PLAIN; }
+  function unlockToken() { return ACCESS_HASH || ACCESS_PLAIN || ''; }
+  async function sha256hex(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function checkCode(val) {
+    if (ACCESS_HASH) { try { return (await sha256hex(val)) === ACCESS_HASH; } catch (e) { return false; } }
+    if (ACCESS_PLAIN) return val === ACCESS_PLAIN;
+    return true;
+  }
   function storedMe() { const m = lsGet('reisgids-me'); return (m && (FAMILY.indexOf(m) > -1 || m === GUEST_NAME)) ? m : null; }
-  function codeOk() { return !ACCESS_CODE || lsGet('reisgids-unlock') === ACCESS_CODE; }
+  function codeOk() { return !lockActive() || lsGet('reisgids-unlock') === unlockToken(); }
   function appUnlocked() { return !!storedMe() && codeOk(); }
   let booted = false;
   function boot() { if (booted) return; booted = true; applyTheme(); init(); }
@@ -1466,17 +1481,17 @@
     const inp = document.getElementById('lock-input');
     const err = document.getElementById('lock-err');
     const card = lock.querySelector('.lock-card');
-    if (!ACCESS_CODE) inp.style.display = 'none';
+    if (!lockActive()) inp.style.display = 'none';
 
-    function tryLogin() {
+    async function tryLogin() {
       if (!picked) { err.textContent = 'Kies eerst je naam.'; return; }
-      if (ACCESS_CODE && inp.value !== ACCESS_CODE) {
+      if (lockActive() && !(await checkCode(inp.value))) {
         err.textContent = 'Onjuiste gezinscode.';
         card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
         inp.select(); return;
       }
       me = picked; lsSet('reisgids-me', me);
-      if (ACCESS_CODE) lsSet('reisgids-unlock', ACCESS_CODE);
+      if (lockActive()) lsSet('reisgids-unlock', unlockToken());
       lock.classList.add('hide'); boot();
     }
     document.getElementById('lock-btn').onclick = tryLogin;
