@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v28 (toegangscode nu gehasht i.p.v. plaintext).
-const CACHE = 'reisgids-v28';
+// Versie opgehoogd naar v29 (server-auth + Firebase Auth + Firestore-regels).
+const CACHE = 'reisgids-v29';
 const SHELL = [
   './',
   './index.html',
@@ -25,6 +25,11 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
+  // Niet-GET (zoals de login-POST) en eigen /api/-functies altijd vers van het netwerk.
+  if (e.request.method !== 'GET' || url.pathname.startsWith('/api/')) {
+    e.respondWith(fetch(e.request).catch(() => new Response('', { status: 504 })));
+    return;
+  }
   // Weer-API en kaarttegels nooit uit de shell-cache serveren: vers van het netwerk.
   if (url.hostname.includes('open-meteo.com') ||
       url.hostname.includes('basemaps.cartocdn.com') ||

@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Alleen wie via de gezinscode (/api/auth) is ingelogd, mag de reisdata
+    // lezen of wijzigen. Buitenstaanders met alleen de publieke Firebase-config
+    // komen er niet meer in.
+    match /{document=**} {
+      allow read, write: if request.auth != null
+                         && request.auth.token.reisgids == true;
+    }
+  }
+}

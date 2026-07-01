@@ -1,0 +1,8 @@
+{
+  "name": "reisgids-italie-2026",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  }
+}
