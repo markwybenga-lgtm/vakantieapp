@@ -440,7 +440,7 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
-  const APP_VERSION = 'v30'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
+  const APP_VERSION = 'v31'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
     { name: 'Rome',                 accom: 'Luxury Suites & Apartments B', addr: 'Via Genova 24, Roma', start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
     { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
@@ -598,11 +598,11 @@
     [ // 6 Monopoli (Masseria Santa Teresa)
       '🅿️ Monopoli: parkeer gratis op ~15 min lopen van het oude centrum.',
       '🍦 Polignano: bezoek Grotta Palazzese wél voor het uitzicht, maar eet er niet (duur/tegenvallend) — alternatief Grotta Ardito.',
-      '🏖️ Mooiste stranden bij Monopoli: Capitolo en Tre Buchi (helder water); lido-tip: Lido Belli Freschi.'
+      '🏖️ Mooiste stranden bij Monopoli: Capitolo en Tre Buchi (helder water); lido-tip: Lido Belli Freschi.',
+      '🥪 Tip van John Jansson: lunchen bij Gustavo — de lekkerste vers belegde (enorme) broodjes. Via Porto 2, Monopoli (4,6★). https://www.google.com/maps/search/?api=1&query=Gustavo%2C%20Via%20Porto%202%2C%20Monopoli'
     ],
     [ // 7 Napels
-      '🍦 Tip van John Jansson: in Salerno een ijszaak met als specialiteit ijs op een broodje (brioche) — echt zuidelijk-Italiaans, zeker doen.',
-      '🥪 Tip van John Jansson: ga voor de lunch naar Gustavo — de lekkerste vers belegde (enorme) broodjes.'
+      '🍦 Tip van John Jansson: ijs op een brioche-broodje bij Bar Gelateria Nettuno in Salerno (Lungomare Trieste 136, 4,5★) — echt zuidelijk-Italiaans, zeker doen. https://www.google.com/maps/search/?api=1&query=Bar%20Gelateria%20Nettuno%2C%20Salerno'
     ],
     []  // 8 reisdag
   ];
@@ -988,13 +988,20 @@
   }
 
   // Praktische tips ("Goed om te weten") per bestemming.
+  function tipHtml(t) {
+    // Escape alles, maar maak een eventuele kaart-URL klikbaar als "📍 Route ↗".
+    const parts = String(t).split(/(https?:\/\/[^\s]+)/g);
+    return parts.map(p => /^https?:\/\//.test(p)
+      ? `<a href="${esc(p)}" target="_blank" rel="noopener">📍 Route ↗</a>`
+      : esc(p)).join('');
+  }
   function renderTips(idx) {
     const box = document.getElementById('detail-tips'); if (!box) return;
     const tips = (typeof TIPS !== 'undefined' && TIPS[idx]) ? TIPS[idx] : [];
     if (!tips.length) { box.innerHTML = ''; return; }
     box.innerHTML = `<details class="tips" open>
       <summary>ℹ️ Goed om te weten</summary>
-      <ul>${tips.map(t => `<li>${esc(t)}</li>`).join('')}</ul>
+      <ul>${tips.map(t => `<li>${tipHtml(t)}</li>`).join('')}</ul>
     </details>`;
   }
 

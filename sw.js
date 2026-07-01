@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v30 (tips van John Jansson bij Napels).
-const CACHE = 'reisgids-v30';
+// Versie opgehoogd naar v31 (Gustavo naar Monopoli + kaartlinks in tips).
+const CACHE = 'reisgids-v31';
 const SHELL = [
   './',
   './index.html',
