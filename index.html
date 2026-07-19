@@ -453,15 +453,15 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
-  const APP_VERSION = 'v32'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
+  const APP_VERSION = 'v34'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
-    { name: 'Rome',                 accom: 'Luxury Suites & Apartments B', addr: 'Via Genova 24, Roma', start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
-    { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
-    { name: 'Matera',               accom: '5 Elementi Sassi',        start: '2026-07-30', end: '2026-07-31', lat: 40.6664, lng: 16.6043 },
-    { name: 'Giurdignano',          accom: 'Agriturismo Il Megalite', start: '2026-07-31', end: '2026-08-03', lat: 40.1486, lng: 18.3486 },
-    { name: 'Alliste (Salento)',    accom: 'Masseria Cisternella',    start: '2026-08-03', end: '2026-08-07', lat: 39.9447, lng: 18.0847 },
-    { name: 'Ostuni & Valle d\'Itria', accom: 'Masseria Vaccaro',       start: '2026-08-07', end: '2026-08-09', lat: 40.6100, lng: 17.8050, addr: 'Masseria Vaccaro, Mesagne BR' },
-    { name: 'Monopoli',             accom: 'Masseria Santa Teresa',   start: '2026-08-09', end: '2026-08-11', lat: 40.9543, lng: 17.2967 },
+    { name: 'Rome',                 accom: 'Luxury Suites & Apartments B', addr: 'Via Genova 24, int. 7 Suite B, 00184 Roma', web: 'https://www.google.com/search?q=Luxury+Suites+and+Apartments+B+Via+Genova+24+Roma', start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
+    { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio', web: 'https://www.agriturismogiorgio.it/', start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
+    { name: 'Matera',               accom: '5 Elementi Sassi', web: 'https://www.booking.com/hotel/it/5-elementi-sassi-matera.html', start: '2026-07-30', end: '2026-07-31', lat: 40.6664, lng: 16.6043 },
+    { name: 'Giurdignano',          accom: 'Agriturismo Il Megalite', web: 'https://www.agriturismoilmegalite.it/', start: '2026-07-31', end: '2026-08-03', lat: 40.1486, lng: 18.3486 },
+    { name: 'Alliste (Salento)',    accom: 'Masseria Cisternella', web: 'https://www.masseriacisternella.it/', start: '2026-08-03', end: '2026-08-07', lat: 39.9447, lng: 18.0847 },
+    { name: 'Ostuni & Valle d\'Itria', accom: 'Masseria Vaccaro', web: 'https://www.masseriavaccaro.it/', start: '2026-08-07', end: '2026-08-09', lat: 40.6100, lng: 17.8050, addr: 'Masseria Vaccaro, Mesagne BR' },
+    { name: 'Monopoli',             accom: 'Masseria Santa Teresa', web: 'https://www.masseriasantateresa.it/', start: '2026-08-09', end: '2026-08-11', lat: 40.9543, lng: 17.2967 },
     { name: 'Napels (omgeving)',    accom: 'Twee dagen in de buurt',  start: '2026-08-11', end: '2026-08-13', lat: 40.8518, lng: 14.2681 },
     { name: 'Rome → Amsterdam',     accom: 'Terugreis & vlucht',      start: '2026-08-13', end: '2026-08-13', lat: 41.9028, lng: 12.4964 }
   ];
@@ -578,7 +578,7 @@
   // ----------------------------------------------------------------------
   const TIPS = [
     [ // 0 Rome
-      '🏠 Verblijf — Luxury Suites & Apartments B (Airbnb), Via Genova 24 (00184 Rome). Host: Teresa, +39 392 058 7493. Check-in vr 24 juli na 13:00, check-out zo 26 juli vóór 10:00. Bevestigingscode HMEHYFFFBR. Let op: host vraagt om paspoort-/ID-gegevens (verplichte gastenregistratie in Italië).',
+      '🏠 Verblijf — Luxury Suites & Apartments B (Airbnb), Via Genova 24, int. 7 (Suite B), 00184 Rome. Host: Teresa, +39 392 058 7493. Check-in vr 24 juli na 13:00, check-out zo 26 juli vóór 10:00. Bevestigingscode HMEHYFFFBR. Let op: host vraagt om paspoort-/ID-gegevens (verplichte gastenregistratie in Italië).',
       '🚲 Geboekt — Rome Private Bike Tour (Baja Bikes): za 25 juli, 14:00 uur. Verzamelen op Via del Viminale 5; wees er 15 min vóór 14:00. 4 personen, Engelstalig. Boeking PEBIB1167204 · tel. 0039 0694539240.',
       '🎟️ Geboekt — Colosseum, Forum Romanum & Palatijn (Viator): zo 26 juli, toegang 10:00 uur, met audiogids-app. 2 volw. + 2 kinderen. Mobiel ticket op de telefoon bewaren. Boeking 1416153973 · let op: niet-restitueerbaar.'
     ],
@@ -701,12 +701,13 @@
       const nightsLabel = nights <= 0 ? 'reisdag' : (nights === 1 ? '1 nacht' : nights + ' nachten');
       const infoChip = i < TRIP.length - 1 ? `<a class="chip link" href="${stopInfoUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Info ↗</a>` : '';
       const addrChip = (i < TRIP.length - 1 && (isLodging(s.accom) || s.addr)) ? `<a class="chip link" href="${stopMapsUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📍 Adres</a>` : '';
+      const stayChip = (i < TRIP.length - 1 && hasStay(s)) ? `<a class="chip link" href="${stopStayUrl(s)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🏠 Accommodatie</a>` : '';
       const canOpen = (POIS[i] || []).length > 0;
       if (canOpen) card.classList.add('clickable');
       const chev = canOpen ? ' <span class="chev">›</span>' : '';
       card.innerHTML = `<div class="daycol"><div class="dnum">${start.getDate()}</div><div class="dmon">${MONTHS[start.getMonth()]}</div><div class="arrow">▾</div></div>
         <div class="info"><div class="nm">${s.name}${chev}</div><div class="ac">${s.accom}</div>
-          <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span>${addrChip}${infoChip}</div></div>`;
+          <div class="meta">${isNow ? '<span class="chip now-tag">Nu hier</span>' : ''}<span class="chip nights">${nightsLabel}</span><span class="chip wx loading" id="wx-${i}">weer laden…</span>${stayChip}${addrChip}${infoChip}</div></div>`;
       if (canOpen) card.onclick = () => openDestination(i);
       wrap.appendChild(card);
       if (i < TRIP.length - 1) {
@@ -788,6 +789,9 @@
   function searchUrl(q) { return 'https://www.google.com/search?q=' + encodeURIComponent(q); }
   function poiInfoUrl(p, idx) { return p.url || searchUrl(`${p.n} ${TRIP[idx].name} Italië`); }
   function isLodging(s) { return /agriturismo|masseria|hotel|b&b|camping|resort|villa|casa|sassi/i.test(s || ''); }
+  // Link naar de accommodatie zelf: eigen website als die bekend is, anders een zoekopdracht.
+  function stopStayUrl(s) { return s.web || searchUrl(`${s.accom} ${s.name} Italië`); }
+  function hasStay(s) { return !!(s.web || s.addr || isLodging(s.accom)); }
   function stopMapsUrl(s) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.addr || `${s.accom} ${s.name}`); }
   function stopInfoUrl(s) {
     if (s.url) return s.url;
@@ -995,6 +999,7 @@
     hero.innerHTML = `<div class="dh-name">${esc(s.name)}</div>
       <div class="dh-dates">${esc(s.accom)} · ${fmtShort(d(s.start))} – ${fmtShort(d(s.end))}</div>
       ${(isLodging(s.accom) || s.addr) ? `<a class="dh-nav" href="${stopMapsUrl(s)}" target="_blank" rel="noopener">📍 Adres &amp; route</a>` : ''}
+      ${hasStay(s) ? `<a class="dh-nav" href="${stopStayUrl(s)}" target="_blank" rel="noopener">🏠 Bekijk de accommodatie</a>` : ''}
       <span class="dh-em">${v.em}</span>`;
     renderTips(idx);
     showTab('detail');
@@ -1339,7 +1344,7 @@
     const head = document.getElementById('today-head');
     const list = document.getElementById('today-list');
     if (!list || vandaagStop == null) { if (head) head.style.display = 'none'; if (list) list.innerHTML = ''; return; }
-    // Vór de reis toont de routestrip hierboven al de bestemmingen; geen dubbele lijst.
+    // Vóór de reis toont de routestrip hierboven al de bestemmingen; geen dubbele lijst.
     if (vandaagTeaser) { head.style.display = 'none'; list.innerHTML = ''; return; }
     const items = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done).slice(0, 5);
     head.querySelector('h2').textContent = 'Op het programma';

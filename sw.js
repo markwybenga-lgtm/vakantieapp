@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v32 (routestrip op home i.p.v. 'Alvast kiezen').
-const CACHE = 'reisgids-v32';
+// Versie opgehoogd naar v34 (volledig adres Rome-appartement).
+const CACHE = 'reisgids-v34';
 const SHELL = [
   './',
   './index.html',
