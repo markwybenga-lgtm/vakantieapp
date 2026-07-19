@@ -1,6 +1,6 @@
 // Service worker — maakt er een installeerbare, offline-bruikbare app van.
-// Versie opgehoogd naar v31 (Gustavo naar Monopoli + kaartlinks in tips).
-const CACHE = 'reisgids-v31';
+// Versie opgehoogd naar v32 (routestrip op home i.p.v. 'Alvast kiezen').
+const CACHE = 'reisgids-v32';
 const SHELL = [
   './',
   './index.html',
