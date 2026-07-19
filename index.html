@@ -177,6 +177,16 @@
     .hero .wx { margin-top: 14px; display: inline-flex; align-items: center; gap: 9px; background: rgba(0,0,0,0.16); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; }
     .hero .wx .em { font-size: 17px; }
 
+    .routestrip { display: flex; gap: 12px; overflow-x: auto; padding: 2px 4px 10px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .routestrip::-webkit-scrollbar { display: none; }
+    .rs-card { flex: 0 0 152px; scroll-snap-align: start; position: relative; overflow: hidden; border: none; border-radius: 16px; padding: 13px 13px 14px; color: #fff; text-align: left; font: inherit; cursor: pointer; box-shadow: var(--shadow); }
+    .rs-card .rs-em { position: absolute; right: 4px; bottom: -10px; font-size: 44px; opacity: 0.42; }
+    .rs-num { position: relative; z-index: 1; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.85; }
+    .rs-name { position: relative; z-index: 1; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; line-height: 1.12; margin: 6px 0 4px; }
+    .rs-dates { position: relative; z-index: 1; font-size: 11.5px; opacity: 0.92; }
+    .rs-tag { position: relative; z-index: 1; display: inline-block; margin-top: 9px; font-size: 10.5px; font-weight: 600; background: rgba(255,255,255,0.92); color: #2A2018; padding: 3px 9px; border-radius: 999px; }
+    .rs-card.now { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .section-h a { font-size: 12px; color: var(--ink-soft); letter-spacing: 0.04em; text-decoration: none; }
     .section-h { display: flex; align-items: baseline; justify-content: space-between; margin: 34px 4px 14px; }
     .section-h h2 { font-family: 'Fraunces', serif; font-weight: 600; font-size: 22px; }
     .section-h span { font-size: 12px; color: var(--ink-soft); letter-spacing: 0.04em; }
@@ -345,6 +355,9 @@
       <div class="wx" id="hero-wx" style="display:none"></div>
     </section>
 
+    <div class="section-h" id="strip-head"><h2>Duik de route in</h2><a href="#" id="strip-all">Hele route ›</a></div>
+    <div class="routestrip" id="routestrip"></div>
+
     <div class="section-h"><h2>Slim advies</h2><span id="plan-where"></span></div>
     <div id="planner"></div>
 
@@ -440,7 +453,7 @@
   // ----------------------------------------------------------------------
   //  REISSCHEMA  — pas hier gerust namen, datums of coördinaten aan.
   // ----------------------------------------------------------------------
-  const APP_VERSION = 'v31'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
+  const APP_VERSION = 'v32'; // ⚠️ houd gelijk aan CACHE in sw.js — zo zie je in de app of de juiste versie live staat
   const TRIP = [
     { name: 'Rome',                 accom: 'Luxury Suites & Apartments B', addr: 'Via Genova 24, Roma', start: '2026-07-24', end: '2026-07-26', lat: 41.9028, lng: 12.4964 },
     { name: 'Mattinata (Gargano)',  accom: 'Agriturismo Giorgio',     start: '2026-07-26', end: '2026-07-30', lat: 41.7095, lng: 16.0506 },
@@ -1214,9 +1227,12 @@
   }
 
   function initVandaag(state) {
+    renderRouteStrip(state);
+    const all = document.getElementById('strip-all');
+    if (all) all.onclick = (e) => { e.preventDefault(); showTab('route'); };
     if (state.phase === 'during') { vandaagStop = state.current; vandaagTeaser = false; }
     else if (state.phase === 'before') { vandaagStop = 0; vandaagTeaser = true; }
-    else { vandaagStop = null; renderPlanner(); return; }
+    else { vandaagStop = null; renderPlanner(); renderToday(); return; }
 
     if (!vandaagTeaser) {
       const t = new Date(); t.setDate(t.getDate() + 1);
@@ -1293,12 +1309,40 @@
     if (btn) btn.disabled = false;
   }
 
+  // Horizontale strip met alle bestemmingen: tik = meteen de bestemming in.
+  function renderRouteStrip(state) {
+    const strip = document.getElementById('routestrip');
+    if (!strip) return;
+    const cur = (state && state.phase === 'during') ? state.current : null;
+    const nextUp = (state && state.phase === 'before') ? 0 : null;
+    strip.innerHTML = TRIP.map((s, i) => {
+      const v = VIBES[i] || { g: 'linear-gradient(150deg,#8A5A2B,#5f3c1c)', em: '📍' };
+      const a = d(s.start), b = d(s.end);
+      const dates = `${a.getDate()} ${MONTHS[a.getMonth()]} – ${b.getDate()} ${MONTHS[b.getMonth()]}`;
+      const tag = i === cur ? '<div class="rs-tag">Nu hier</div>'
+                : i === nextUp ? '<div class="rs-tag">We beginnen hier</div>' : '';
+      return `<button type="button" class="rs-card${i === cur ? ' now' : ''}" style="background:${v.g}" data-i="${i}">
+        <div class="rs-em">${v.em}</div>
+        <div class="rs-num">Stop ${i + 1}</div>
+        <div class="rs-name">${esc(s.name)}</div>
+        <div class="rs-dates">${dates}</div>
+        ${tag}
+      </button>`;
+    }).join('');
+    strip.querySelectorAll('.rs-card').forEach(b => b.onclick = () => openDestination(+b.dataset.i));
+    const target = cur != null ? cur : 0;
+    const card = strip.querySelector(`.rs-card[data-i="${target}"]`);
+    if (card) strip.scrollLeft = Math.max(0, card.offsetLeft - 4);
+  }
+
   function renderToday() {
     const head = document.getElementById('today-head');
     const list = document.getElementById('today-list');
     if (!list || vandaagStop == null) { if (head) head.style.display = 'none'; if (list) list.innerHTML = ''; return; }
+    // Vór de reis toont de routestrip hierboven al de bestemmingen; geen dubbele lijst.
+    if (vandaagTeaser) { head.style.display = 'none'; list.innerHTML = ''; return; }
     const items = mergeItems(vandaagStop, vandaagDocs).filter(it => !it.done).slice(0, 5);
-    head.querySelector('h2').textContent = vandaagTeaser ? 'Alvast kiezen' : 'Op het programma';
+    head.querySelector('h2').textContent = 'Op het programma';
     head.style.display = items.length ? 'flex' : 'none';
     list.innerHTML = items.map(it =>
       `<div class="poi"><div class="badge" style="--c:${(CATS[it.cat] || {}).kl || '#8A5A2B'}">${(CATS[it.cat] || {}).em || '📍'}</div>
